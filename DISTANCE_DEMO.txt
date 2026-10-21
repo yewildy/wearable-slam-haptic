@@ -1,0 +1,68 @@
+最简单的模拟距离计算
+==================
+2026-10-21
+
+已经做了什么
+------------
+在原来的点数节点中增加最近点距离计算，没有修改模拟发布器和launch。
+输入仍为4个模拟点，输出点数仍为4；新增/haptic/nearest_distance。
+新话题类型std_msgs/Float32，单位米，表示点到输入坐标原点的三维直线距离。
+当前输入坐标系是haptic_demo，不是身体坐标或SLAM世界坐标。
+
+模拟点与公式
+------------
+(1,0,0)、(2,0,0)、(3,0,0)、(4,0,0)。
+每个点距离d=sqrt(x*x+y*y+z*z)，再取最小值。
+所以四个距离为1、2、3、4米，输出min=1米。
+代码使用math.hypot(x,y,z)，等价于计算上述三维欧氏距离。
+例如(3,4,0)距离为5米，不能只读取x就当作距离。
+
+ROS通信过程
+-----------
+demo_livox_publisher.py每秒发布一帧CustomMsg到/haptic/demo/lidar。
+demo.launch把订阅节点的input_topic改为模拟话题。
+节点收到一帧，就进入on_points回调，发布点数和最近距离。
+rostopic echo是另一个订阅者，只负责把收到的消息打印到终端。
+输出1.0不是在节点里写死的；它来自本帧点坐标的计算。
+因为模拟输入不变，所以每次计算结果也不变。
+
+在Jetson上运行
+-------------
+不要重复启动已经运行中的同名演示。要重开，先在旧launch终端按Ctrl+C。
+
+终端A：
+source ~/haptic_ws/devel/setup.bash
+roslaunch haptic_feedback demo.launch
+
+终端B，持续滚动：
+source ~/haptic_ws/devel/setup.bash
+rostopic echo /haptic/nearest_distance
+
+预期每秒一条：
+data: 1.0
+---
+
+在B按Ctrl+C只停止查看；在A按Ctrl+C才停止演示节点。
+查看点数仍使用rostopic echo /haptic/point_count。
+
+文件与改动
+----------
+Jetson源码：~/haptic_ws/src/haptic_feedback/scripts/haptic_feedback_node.py
+新增nearest_distance(points)函数，使用有限坐标计算距离并取最小值。
+新增Float32发布器，在原回调里调用并发布。
+模拟发布器、launch、驱动、Point-LIO及网络没有修改。
+为了看见新代码，需重启节点；原进程不会自动重新加载源码。
+
+验证
+----
+7项函数测试通过：四点最小值、三四五距离、三维坐标、负坐标、空输入、NaN/Inf、原点零距离。
+11323临时master集成测试：连续点数4、4、4，最近距离1.0、1.0、1.0。
+确认模拟图没有发布/livox/lidar，临时master测试结束已关闭。
+
+边界与未完成项
+--------------
+空点云或全部非有限坐标输出NaN，含义是未知，不是零米或没有障碍。
+原点零距离在数学演示里保留，不代表真实雷达的零值点一定有效。
+尚未处理Livox返回标记、自身点、地面、视场、盲区、噪点和时间连续性。
+没有距离分档、震动强度、马达控制或安全可靠性验证。
+这只是演示计算和话题通信，不是可供实际行走依赖的避障算法。

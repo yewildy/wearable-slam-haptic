@@ -1,0 +1,24 @@
+{
+  "synthetic_data_only": true,
+  "physical_lidar_tested": false,
+  "demo_input": "/haptic/demo/lidar",
+  "output": "/haptic/point_count",
+  "input_type": "livox_ros_driver2/CustomMsg",
+  "output_type": "std_msgs/UInt32",
+  "received_counts": [
+    4,
+    4,
+    4
+  ],
+  "live_lidar_topic_not_published": true,
+  "distance_topic": "/haptic/nearest_distance",
+  "distance_type": "std_msgs/Float32",
+  "received_distances_m": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "isolated_master_port": 11323,
+  "motor_control_enabled": false,
+  "temporary_master_stopped": true
+}
