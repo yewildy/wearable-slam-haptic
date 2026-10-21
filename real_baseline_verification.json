@@ -1,0 +1,33 @@
+{
+  "physical_lidar_tested": true,
+  "motor_control_enabled": false,
+  "test_kind": "observational_data_link_and_raw_distance_only",
+  "sample_seconds_requested": 15,
+  "cloud_frames": 149,
+  "cloud_observed_hz": 9.995794850149919,
+  "frame_ids": [
+    "livox_frame"
+  ],
+  "points_per_frame_min": 19872,
+  "points_per_frame_max": 20064,
+  "points_per_frame_mean": 20000.21476510067,
+  "declared_count_mismatches": 0,
+  "nonfinite_points": 0,
+  "zero_coordinate_points": 1215601,
+  "raw_nearest_min_m": 0.0,
+  "raw_nearest_max_m": 0.0,
+  "positive_nearest_min_m_diagnostic_only": 0.09859005894076915,
+  "positive_nearest_max_m_diagnostic_only": 0.10242558036217811,
+  "header_non_increasing_steps": 0,
+  "header_max_gap_seconds": 0.10030651092529297,
+  "distance_messages": 150,
+  "count_messages": 150,
+  "distance_output_min_m": 0.0,
+  "distance_output_max_m": 0.0,
+  "imu_messages": 3011,
+  "imu_observed_hz": 199.9979035693767,
+  "mock_topic_absent": true,
+  "ground_truth_distance_measured": false,
+  "obstacle_detection_validated": false,
+  "full_scan_saved": false
+}
