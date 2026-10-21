@@ -1,0 +1,125 @@
+障碍接近判断的候选方法与参考资料
+==============================
+研究日期 2026-10-21 日本时间
+状态：方案比较，未实施新筛选、聚类、训练、跟踪或震动控制。
+
+当前问题
+--------
+真实桌面初测中约40.79%的点为零坐标，直接最小值始终为0米。
+先解决输入有效性，再比较减少误判的方法，不能用聚类掩盖无效输入。
+目标首先是判断前方有无接近的障碍，不必先认出人、椅子或箱子的名称。
+聚类得到的是几何点团，不保证一个点团就是一个独立完整物体，也没有稳定身份。
+
+优先考虑的第一版
+----------------
+有效性检查 -> 关注区域 -> 邻域支持或聚类 -> 有支持的近表面距离 -> 短时确认 -> 提醒状态。
+这是建议流程，用户还没有批准具体算法、阈值或实现语言。
+
+1 输入有效性
+检查NaN/Inf、零坐标和Livox回波标记含义，分别计数并显示处理前后点数。
+零点成因及tag位定义应查对应设备协议或驱动源码，不猜测位掩码。
+区分未知、无可靠候选、候选障碍，不能把无数据当成安全。
+官方近距精度限制不等于自动把所有近物体删除；过滤下限须与实际目标和盲区一并说明。
+
+2 自身与关注区域
+身体、支架、线缆区域按实际安装测量，不能简单删掉整个近距离球。
+方向和高度必须明确使用雷达、身体还是重力参考系。前向轴要实测确认，不默认原始x就是身体前方。
+胸前高度目前估计1.2至1.3米，倾角未定，不能把世界地图原点距离当作人体间隙。
+地面处理不能盲目删除最大的平面：最大的平面可能是墙或桌面。
+如果以后做RANSAC地面分割，需要高度、重力方向与平面位置约束；没有测到地面时不能强行拟合。
+
+3 邻域支持与几何分组
+半径邻域检查：一个近点附近是否有其他点支持，降低孤立噪点直接触发的机会。
+PCL已有RadiusOutlierRemoval，不需要从零实现邻域搜索。
+欧氏聚类：按照空间邻近关系将点分组，PCL已有EuclideanClusterExtraction和示例。
+DBSCAN：基于邻域密度分组并标注噪声，是不需要训练的聚类算法。
+欧氏聚类与DBSCAN是候选替代路线，不要求两个都串联。
+这两种分组都可能把接触物体合并或把一个物体拆开，不能宣称完成语义实例识别。
+点密度随距离、遮挡、扫描时间改变；固定半径和最小点数不一定适合全部区域。
+细杆、桌沿、手指等可能点很少，不能直接把小点团都删掉。
+第一次测试必须同时统计漏检，不追求单纯“输出更稳定”。
+
+4 从点团得到距离
+不要只看点团中心，中心可能比真正靠近身体的表面远很多。
+优先比较有邻域支持的最近表面点，并保留低置信度近点供诊断。
+分位数距离可作为候选比较，但可能高估最近障碍距离，不作为默认安全值。
+先沿用点到雷达原点的三维距离用于学习，后续若改成人体包络间隙需明确数学定义。
+
+5 连续观察与迟滞
+短时确认可减少单帧偶发触发，但会增加延迟，也可能漏掉短暂出现的细物体。
+候选方法：相邻帧确认、时间窗投票、进入与解除提醒使用不同门限。
+这些是拟议规则，尚未选择帧数或米数；必须按时间戳和实际接收率评估延迟。
+极近或不确定目标不能因为尚未凑齐若干帧就一律当作无障碍。
+历史点云累积时必须考虑运动，否则可能制造拖影和旧障碍。
+
+6 “接近”与“运动物体”不是同一个问题
+人走近固定墙面，也需要提醒，不必等待检测出物体在世界中移动。
+第一版可以根据设备与前方候选的距离决定提醒强弱。
+若要计算某个物体的接近速度，需先关联同一目标，不能对每帧不同的全局最近点直接差分。
+身体晃动、目标切换、遮挡和处理延迟都可能造成假速度。
+要区分世界中的物体运动，还需结合设备自身运动估计及其误差。
+
+可复用代码与现场环境
+--------------------
+PCL官方实现及示例：
+https://github.com/PointCloudLibrary/pcl
+https://pointclouds.org/documentation/tutorials/cluster_extraction.html
+https://pointclouds.org/documentation/classpcl_1_1_radius_outlier_removal.html
+https://pointclouds.org/documentation/tutorials/planar_segmentation.html
+适合候选：C++处理节点或既有ROS-PCL接口；需要把CustomMsg坐标接入适当的数据结构。
+有PCL并不等于当前Python里可以直接import pcl，不能跳过接口设计和构建验证。
+
+Open3D官方DBSCAN示例：
+https://www.open3d.org/docs/release/tutorial/geometry/pointcloud.html#dbscan-clustering
+可用于Python离线比较，但本机未检测到Open3D；Jetson ARM64/Python版本兼容和运行速度尚未验证。
+不直接复制教程中的eps、min_points，它们不是本设备的标定参数。
+
+继续Python时，可先利用已存在的SciPy cKDTree做邻域查询，而不是手写全点两两比较：
+https://docs.scipy.org/doc/scipy-1.10.1/reference/generated/scipy.spatial.cKDTree.query_ball_point.html
+这只是邻域工具，不等于已经获得一套完整的DBSCAN或障碍检测程序。
+
+只读检查结果：libpcl-dev1.10.0、ros-noetic-pcl-ros1.7.4已安装；Python可导入numpy1.24.4和scipy1.10.1。
+系统dpkg中python3-scipy版本为1.3.3，但当前Python实际导入1.10.1，开发应以实际环境验证为准。
+未检测到sklearn、open3d模块。没有安装或升级任何软件，没有改动运行节点。
+
+训练和数据集
+------------
+第一版无需训练集。先建立几何基线和自己的有标注测试场景，才知道训练要解决什么问题。
+若以后需要认出桌椅或行人，再评估语义模型、摄像头融合和训练数据。
+S3DIS相关室内研究可以参考Armeni等2016年的论文，但整栋建筑的点云与胸前MID-360单帧存在采集方式差异。
+https://openaccess.thecvf.com/content_cvpr_2016/html/Armeni_3D_Semantic_Parsing_CVPR_2016_paper.html
+SemanticKITTI来自自动驾驶场景和Velodyne HDL-64E，不可直接假定模型适用于室内胸前MID-360：
+https://www.semantic-kitti.org/dataset.html
+https://openaccess.thecvf.com/content_ICCV_2019/papers/Behley_SemanticKITTI_A_Dataset_for_Semantic_Scene_Understanding_of_LiDAR_Sequences_ICCV_2019_paper.pdf
+使用数据前分别核对数据、代码和预训练权重的许可；本轮未下载数据或权重。
+即使语义模型不认识某个物体，也不能把它当成没有障碍。
+
+怎样证明减少误判
+----------------
+比较三组：原始最小值；有效性与区域筛选；再加邻域/聚类及时间确认。
+无目标背景、箱子/椅子、细杆或桌沿、目标左右移动、佩戴晃动分别测试。
+量好参照距离，记录固定位置与安装角；先在受控环境测试，不依赖原型保障行走安全。
+至少记录：无障碍场景误报次数/分钟、标注目标试次漏检率、首次检测距离、事件延迟和处理耗时。
+先统一“一个试次/一个误报事件”的定义，不能用点数变化代替检测准确率。
+训练或调参用的数据与最后评估的数据分开；相邻帧随机拆分可能造成高度相似数据泄漏。
+报告误报减少时也报告漏检和延迟变化，没有单靠一个滤波器就保证可靠的结论。
+
+可引用的候选文献
+----------------
+[1] R. B. Rusu and S. Cousins. 3D is here: Point Cloud Library (PCL). ICRA, 2011.
+DOI 10.1109/ICRA.2011.5980567
+官方论文：https://pointclouds.org/assets/pdf/pcl_icra2011.pdf
+用于说明实际采用的PCL工具；尚未在本项目中调用聚类。
+
+[2] M. Ester, H.-P. Kriegel, J. Sander, and X. Xu. A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise. KDD, 1996.
+原文：https://cdn.aaai.org/KDD/1996/KDD96-037.pdf
+若采用或比较DBSCAN，可作为方法出处；未实现前不要写成已采用。
+
+[3] Q.-Y. Zhou, J. Park, and V. Koltun. Open3D: A Modern Library for 3D Data Processing. arXiv:1801.09847, 2018.
+https://arxiv.org/abs/1801.09847
+只有实际用到Open3D或讨论其方案时才相应说明，不写成现场已部署。
+
+引用论文与复制代码不是同一件事。PCL的BSD许可、Open3D的MIT许可都要求按相应条件保留版权许可说明。
+https://github.com/PointCloudLibrary/pcl/blob/master/LICENSE.txt
+https://github.com/isl-org/Open3D/blob/main/LICENSE
+本轮仅查阅与环境检查，没有复制部署第三方算法代码，也没有宣称实现识别或减少误报的结果。
