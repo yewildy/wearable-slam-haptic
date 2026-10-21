@@ -1,0 +1,68 @@
+ROS 1话题订阅演示 2026-10-21
+
+推荐接法
+MID-360 -> livox_ros_driver2 -> /livox/lidar
+                                  -> Point-LIO做定位建图
+                                  -> haptic_feedback_node做后续距离判断
+本次只接收点云并输出点数，不实现距离、震动强度或马达控制。
+
+当前组合launch默认xfer_format=1，对应livox_ros_driver2/CustomMsg。
+话题名一样还不够，发布者和订阅者消息类型必须一致。
+不为这个演示改变原驱动的输出格式，不重启或改动Point-LIO。
+Point-LIO的地图点云可能在世界坐标系下，不能直接把xyz长度当成身体周围的距离；使用该结果时需要相应TF变换。
+
+不接雷达也能看的模拟演示
+终端A：
+source ~/haptic_ws/devel/setup.bash
+roslaunch haptic_feedback demo.launch
+
+终端B：
+source ~/haptic_ws/devel/setup.bash
+rostopic type /haptic/demo/lidar
+rostopic echo -n 1 /haptic/point_count
+
+预期类型livox_ros_driver2/CustomMsg，预期输出data: 4。
+模拟发布器每秒发送4个虚构点，输入话题是/haptic/demo/lidar，frame_id=haptic_demo。
+它不往/livox/lidar发布，避免给Point-LIO喂入虚构数据。
+这只证明发布 -> 订阅回调 -> 发布结果这条通信链路通了，不是真实雷达验证。
+终端A按Ctrl+C结束，停止模拟演示后再接真实数据，不同时启动两个同名节点。
+
+切换到真实雷达
+先接雷达电源、网线，在原来的终端启动：
+roslaunch mid360_pointlio_bringup mid360_pointlio.launch
+
+另一个终端：
+source ~/haptic_ws/devel/setup.bash
+rostopic type /livox/lidar
+roslaunch haptic_feedback bringup.launch
+
+再一个终端：
+source ~/haptic_ws/devel/setup.bash
+rostopic echo /haptic/point_count
+
+这里Point-LIO与新节点只是共享同一份驱动输入，新节点不需要等待Point-LIO完成建图。
+若/livox/lidar不是livox_ros_driver2/CustomMsg，先核对实际设置，不直接改老驱动或拿PointCloud2代码硬接。
+没有雷达消息时不会有新的点数输出，不能把没有输出当成没有障碍。
+
+新增和修改的文件
+scripts/haptic_feedback_node.py：新增CustomMsg订阅器、回调及UInt32点数发布器。
+scripts/demo_livox_publisher.py：新增只在演示话题发布的模拟数据。
+launch/bringup.launch：新增input_topic参数，默认/livox/lidar。
+launch/demo.launch：启动模拟发布器，并将原型节点的输入改为/haptic/demo/lidar。
+CMakeLists.txt：登记新模拟脚本。
+package.xml：增加livox_ros_driver2运行依赖，使用已有驱动，不安装新驱动。
+
+核心代码
+from livox_ros_driver2.msg import CustomMsg
+from std_msgs.msg import UInt32
+count_publisher = rospy.Publisher('/haptic/point_count', UInt32, queue_size=1)
+def on_points(message):
+    count_publisher.publish(UInt32(data=len(message.points)))
+rospy.Subscriber(input_topic, CustomMsg, on_points, queue_size=1)
+
+rospy.Subscriber相当于ROS 2的create_subscription；on_points相当于订阅回调。
+rospy.Publisher相当于create_publisher；publish的概念没有变。
+
+独立测试结果保存在~/haptic_ws/logs/20261021/topic_demo/。
+最初的纯状态节点构建记录和源文件副本保留在Windows本月work/haptic_node_20261021中。
+本次修改前的Jetson文件快照保存在~/haptic_ws/logs/20261021/before_topic_demo/。

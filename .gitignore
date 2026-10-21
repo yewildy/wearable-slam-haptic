@@ -1,0 +1,17 @@
+build/
+devel/
+install/
+logs/
+__pycache__/
+*.pyc
+*.bag
+*.bag.active
+*.mp4
+*.avi
+*.docx
+*.pem
+*.key
+.env
+.env.*
+id_rsa*
+id_ed25519*
