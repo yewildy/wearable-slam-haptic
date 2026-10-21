@@ -1,0 +1,9 @@
+<launch>
+  <arg name="input_topic" default="/livox/lidar" />
+  <node pkg="haptic_feedback"
+        type="haptic_feedback_node.py"
+        name="haptic_feedback_node"
+        output="screen">
+    <param name="input_topic" value="$(arg input_topic)" />
+  </node>
+</launch>

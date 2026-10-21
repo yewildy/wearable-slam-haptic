@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="haptic_feedback" type="demo_livox_publisher.py"
+        name="haptic_demo_points" output="screen" />
+  <include file="$(find haptic_feedback)/launch/bringup.launch">
+    <arg name="input_topic" value="/haptic/demo/lidar" />
+  </include>
+</launch>
