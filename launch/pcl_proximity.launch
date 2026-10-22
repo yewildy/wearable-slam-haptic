@@ -1,5 +1,6 @@
 <launch>
   <arg name="input_topic" default="/livox/lidar"/>
+  <arg name="self_mask_config" default="$(find haptic_feedback)/config/self_mask.yaml"/>
   <arg name="min_range" default="0.2"/>
   <arg name="max_range" default="5.0"/>
   <arg name="support_radius" default="0.08"/>
@@ -11,6 +12,7 @@
   <arg name="release_frames" default="2"/>
   <arg name="stale_timeout" default="0.5"/>
   <node pkg="haptic_feedback" type="pcl_proximity_node" name="haptic_proximity_node" output="screen">
+    <rosparam command="load" file="$(arg self_mask_config)"/>
     <param name="input_topic" value="$(arg input_topic)"/>
     <param name="min_range" value="$(arg min_range)"/>
     <param name="max_range" value="$(arg max_range)"/>
