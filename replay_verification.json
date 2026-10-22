@@ -1,0 +1,20 @@
+{
+  "synthetic_frame_name": "fixture_frame",
+  "synthetic_frames_processed": 5,
+  "synthetic_range_correct": true,
+  "occupied_port_refused_without_starting": true,
+  "candidate_input_unchanged": true,
+  "temporary_master_stopped": true,
+  "live_sensor_used": false,
+  "physical_motor_tested": false,
+  "saved_real_bag_frames_processed": 141,
+  "saved_real_states": {
+    "MEDIUM": 141
+  },
+  "saved_real_range_m": {
+    "min": 0.905349,
+    "mean": 0.9492413971631206,
+    "max": 0.96695
+  },
+  "known_target_distance_reference": false
+}

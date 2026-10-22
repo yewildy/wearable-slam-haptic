@@ -65,6 +65,21 @@ uses an isolated ROS master on port 11326, reprocesses the raw lidar, reports
 results and stops its own processes. It does not change the live default profile.
 Keep the candidate disabled until its intended filtering scope is reviewed.
 
+Replay checks (2026-10-22 evening):
+The tool validates the candidate bounds and recorded message type/first frame
+before starting a master. It uses the configured frame, not a hardcoded name.
+Each run writes replay_TIMESTAMP/ with a separate trial profile, log and report;
+it does not overwrite the input candidate or previous runs. SAVED_DIRECTORY
+prints that new directory. Reports include expected/processed frame counts,
+complete_frame_count and frame_mismatch_outputs; partial results are visible.
+Master/detector readiness is bounded; cleanup targets only owned process groups.
+An actually occupied port is refused. A closed master's TCP TIME_WAIT state is
+not confused with an active server. The default live ROS graph is not used.
+19 pure unit tests passed on Windows and Jetson. Isolated integration processed
+5 synthetic frames named fixture_frame and all 141 saved real frames; occupied
+port refusal, unchanged input profiles and stopped temporary masters were checked.
+These are software checks, not a new physical experiment or safety evaluation.
+
 Verification:
 13 previous synthetic cases still pass. Seven mask cases also pass, covering
 self/remaining points, boundaries, overlaps, near uncertainty, frame mismatch
