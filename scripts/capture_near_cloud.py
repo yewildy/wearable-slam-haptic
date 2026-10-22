@@ -20,6 +20,28 @@ def describe(values):
             'max': float(np.max(values))} if len(values) else None
 
 
+def candidate_quality(timestamps, frame_names, count_mismatches, near_count):
+    stamps = np.asarray(timestamps, dtype=np.float64)
+    finite = np.isfinite(stamps)
+    deltas = np.diff(stamps)
+    valid_deltas = deltas[np.isfinite(deltas)]
+    invalid_stamps = int((~finite | (stamps <= 0)).sum())
+    non_increasing = int((valid_deltas <= 0).sum())
+    reasons = []
+    if not near_count: reasons.append('no_nonzero_near_points')
+    if len(set(frame_names)) != 1: reasons.append('mixed_coordinate_frames')
+    if any(not name.strip() for name in frame_names): reasons.append('empty_coordinate_frame')
+    if invalid_stamps: reasons.append('invalid_header_timestamps')
+    if non_increasing: reasons.append('non_increasing_header_timestamps')
+    if count_mismatches: reasons.append('declared_point_count_mismatch')
+    return {'candidate_eligible': not reasons, 'candidate_block_reasons': reasons,
+            'invalid_header_timestamp_frames': invalid_stamps,
+            'non_increasing_header_transitions': non_increasing,
+            'declared_count_mismatch_frames': count_mismatches,
+            'header_gap_seconds': describe(valid_deltas),
+            'note': 'Eligibility is data consistency only, not confirmation of self geometry or data freshness.'}
+
+
 def write_pcd(path, xyz):
     with path.open('x') as stream:
         stream.write('# .PCD v0.7\nVERSION 0.7\nFIELDS x y z\nSIZE 4 4 4\n'
@@ -36,6 +58,8 @@ def analyze(bag_path, output):
     voxel_frames = collections.Counter()
     near_chunks, frame_chunks, timestamps = [], [], []
     frame_names = set()
+    per_frame_names = []
+    count_mismatches = 0
     baseline_states = collections.Counter()
     baseline_distances = []
     last_cloud = np.empty((0, 3), dtype=np.float32)
@@ -46,6 +70,7 @@ def analyze(bag_path, output):
             xyz = np.array([(p.x, p.y, p.z) for p in message.points], dtype=np.float32).reshape(-1, 3)
             raw_tags = np.array([p.tag for p in message.points], dtype=np.uint8)
             counts['input_points'] += len(xyz)
+            count_mismatches += int(message.point_num != len(xyz))
             finite = np.isfinite(xyz).all(axis=1)
             zero = finite & (xyz == 0).all(axis=1)
             counts['nonfinite_points'] += int((~finite).sum())
@@ -62,6 +87,7 @@ def analyze(bag_path, output):
             voxel_frames.update(tuple(x) for x in np.unique(voxels, axis=0))
             timestamps.append(message.header.stamp.to_sec())
             frame_names.add(message.header.frame_id)
+            per_frame_names.append(message.header.frame_id)
             frames += 1
         for _, message, _ in bag.read_messages(topics=['/haptic/proximity/diagnostics']):
             if message.status:
@@ -74,8 +100,10 @@ def analyze(bag_path, output):
         raise RuntimeError('No /livox/lidar frames saved; no analysis produced')
     near_xyz = np.concatenate(near_chunks)
     frame_ids = np.concatenate(frame_chunks)
+    quality = candidate_quality(timestamps, per_frame_names, count_mismatches, len(near_xyz))
     np.savez_compressed(output/'near_returns.npz', xyz=near_xyz, frame_id=frame_ids,
-                        frame_stamps=np.array(timestamps), voxel_size_m=voxel_size)
+                        frame_stamps=np.array(timestamps), frame_names=np.array(per_frame_names),
+                        voxel_size_m=voxel_size)
     write_pcd(output/'last_valid_cloud.pcd', last_cloud)
     write_pcd(output/'near_returns.pcd', near_xyz)
     distances = np.linalg.norm(near_xyz, axis=1)
@@ -89,7 +117,9 @@ def analyze(bag_path, output):
     radial_edges = np.array([0, .1, .15, .19, .2, .21, .25, .3, .4, .5])
     histogram, _ = np.histogram(distances, bins=radial_edges)
     report = {'frames': frames, 'frame_names': sorted(frame_names), 'topic_counts': topic_counts,
-              'lidar_header_duration_seconds': timestamps[-1]-timestamps[0],
+              'lidar_header_duration_seconds': float(timestamps[-1]-timestamps[0])
+                  if np.isfinite(timestamps[0]) and np.isfinite(timestamps[-1]) else None,
+              'data_quality': quality,
               'counts': dict(counts), 'near_points_0_to_0_5_m': len(near_xyz),
               'near_xyz_m': {axis: describe(near_xyz[:, i]) for i, axis in enumerate('xyz')},
               'radial_bins_m': radial_edges.tolist(), 'radial_counts': histogram.tolist(),
@@ -103,7 +133,7 @@ def analyze(bag_path, output):
               'recorded_baseline_distance_m': describe(baseline_distances),
               'note': 'Persistent is not self: static surroundings also persist. Tag bytes are not classified.'}
     (output/'analysis.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
-    if len(near_xyz) and len(frame_names) == 1:
+    if quality['candidate_eligible']:
         candidate = {'self_mask_enabled': False, 'self_mask_frame': next(iter(frame_names)),
                      'self_boxes': [{'min': (near_xyz.min(axis=0)-.02).astype(float).tolist(),
                                      'max': (near_xyz.max(axis=0)+.02).astype(float).tolist()}],
