@@ -1,0 +1,80 @@
+{
+  "synthetic_only": true,
+  "isolated_build_only": true,
+  "live_deployment_performed": false,
+  "cases": [
+    {
+      "case": "default_absent_normal",
+      "review_state": "DISABLED",
+      "state": "STRONG"
+    },
+    {
+      "case": "default_absent_stale",
+      "review_state": "DISABLED",
+      "state": "STALE_OR_NO_DATA"
+    },
+    {
+      "case": "candidate_normal",
+      "review_state": "CANDIDATE_UNCONFIRMED",
+      "state": "MEDIUM"
+    },
+    {
+      "case": "candidate_frame_mismatch",
+      "review_state": "CANDIDATE_UNCONFIRMED",
+      "state": "SELF_MASK_FRAME_MISMATCH"
+    },
+    {
+      "case": "candidate_stale",
+      "review_state": "CANDIDATE_UNCONFIRMED",
+      "state": "STALE_OR_NO_DATA"
+    },
+    {
+      "case": "declared_confirmed_normal",
+      "review_state": "USER_CONFIRMED",
+      "state": "MEDIUM"
+    },
+    {
+      "case": "declared_confirmed_frame_mismatch",
+      "review_state": "USER_CONFIRMED",
+      "state": "SELF_MASK_FRAME_MISMATCH"
+    },
+    {
+      "case": "declared_confirmed_stale",
+      "review_state": "USER_CONFIRMED",
+      "state": "STALE_OR_NO_DATA"
+    },
+    {
+      "case": "disabled_declared_normal",
+      "review_state": "DISABLED",
+      "state": "STRONG"
+    },
+    {
+      "case": "disabled_declared_stale",
+      "review_state": "DISABLED",
+      "state": "STALE_OR_NO_DATA"
+    },
+    {
+      "case": "reject_nonboolean_0",
+      "rejected": true
+    },
+    {
+      "case": "reject_nonboolean_1",
+      "rejected": true
+    },
+    {
+      "case": "reject_nonboolean_2",
+      "rejected": true
+    }
+  ],
+  "metadata_does_not_change_filter_results_in_fixtures": true,
+  "temporary_master_stopped": true,
+  "physical_identity_verified": false,
+  "confirmation_meaning": "Explicit configuration assertion only; not safety or physical verification",
+  "core_regression_cases": 13,
+  "geometry_regression_cases": 7,
+  "core_parameter_validation_passed": true,
+  "mask_parameter_validation_passed": true,
+  "live_source_binary_default_profile_and_bag_hashes_unchanged": true,
+  "tested_source_sha256": "627a6194ee19013f1396b7a5bbd585667c423b3659375d035c8d68b4acc00777",
+  "library_compatibility_warning_resolved": false
+}

@@ -1,0 +1,70 @@
+Mask provenance diagnostics 2026-10-23
+
+Deployment status
+The new C++ source was built and tested in a separate haptic-only workspace.
+It has NOT replaced the existing Jetson source, executable or default profile.
+The repository source now includes this tested change for review/new builds;
+the existing live workspace will not gain these fields until explicitly updated.
+No driver, mapping, network, system library or shell startup setting was changed.
+
+What changed
+Optional private parameter: self_identity_confirmed, default false.
+It must be an actual boolean. A string such as "true", an integer or an array
+is rejected during construction. Absence retains the previous false default.
+This flag records an explicit configuration assertion; it does not recognize
+self points, validate a physical mounting or change distance/filter decisions.
+
+Additional keys on /haptic/proximity/diagnostics
+self_mask_review_state:
+  DISABLED                 self_mask_enabled is false, regardless of assertion
+  CANDIDATE_UNCONFIRMED    enabled, identity assertion absent/false
+  USER_CONFIRMED           enabled, identity assertion explicitly true
+self_identity_confirmed: the configured boolean, shown even when mask disabled
+self_mask_confirmation_basis: not_confirmed or explicit_configuration_only
+masked_space_occupancy: unknown_not_free when enabled; not_inferred_by_mask otherwise
+
+USER_CONFIRMED is a caller assertion, NOT an automated finding, certification
+or proof of wearable safety. Do not set it just because a static fit looks good.
+The existing saved scene candidate remains unconfirmed and disabled.
+Review state describes the configuration, not successful processing of a frame:
+a USER_CONFIRMED configuration can still report SELF_MASK_FRAME_MISMATCH or
+STALE_OR_NO_DATA with UNKNOWN distance. Read those state/level fields as well.
+Even confirmed geometry does not reveal what is hidden behind an obstruction.
+
+Behavior preserved
+No change to default mask enablement, box bounds, PCL crop/support filtering,
+range thresholds, hysteresis, timeout, output topics or motor behavior.
+Unconfirmed enabled trials remain possible for isolated offline analysis and
+now also emit a warning. All watchdog and frame-error diagnostics include the
+same provenance fields, so missing input cannot silently look confirmed/clear.
+
+Reproduce in a separate build
+Use a separate catkin workspace containing haptic_feedback and overlay the
+already installed Noetic/Livox message dependencies. Build there, not over a
+working live setup. Keep test_mask_provenance.py and replay_candidate.py together.
+source /absolute/path/to/isolated_workspace/devel/setup.bash
+python3 /path/to/test_mask_provenance.py /absolute/path/to/isolated_workspace/devel/lib/haptic_feedback/pcl_proximity_node
+The test takes an explicit executable, refuses a busy test port, uses a private
+ROS master with synthetic topics and stops only owned processes. It never uses
+raw sensor input or actuates a motor. Test-only confirmation flags do not label
+any real saved scene as confirmed.
+
+Observed checks
+13 new synthetic provenance cases passed: four enabled/assertion combinations,
+normal/stale outputs, frame mismatch and three invalid boolean types. Filter
+distance/count signatures matched with the assertion toggled, for the same
+enabled state and fixture. Previous 13 core and 7 geometry-mask cases passed
+against this isolated build; their log paths alone were redirected to avoid
+overwriting earlier test results. Existing invalid-parameter checks also passed.
+Temporary masters stopped. Hash checks confirmed the live source, live binary,
+default mask file and original bag unchanged. There was no physical self review.
+
+Test failure and limit
+The first test failed because it expected a specific fatal console message.
+The process actually exited with code 1 and empty captured output; adding
+diagnostic capture confirmed that observation. The test was changed to require
+exit code 1 and no diagnostic publisher from the invalid node, rather than
+requiring logger text. The reason for the absent console line was not traced
+to a specific logging setting. No ROS logging configuration was changed.
+The existing mixed Boost filesystem 1.71/1.83 link warning remains unresolved.
+Synthetic regression success does not establish long-run hardware reliability.
