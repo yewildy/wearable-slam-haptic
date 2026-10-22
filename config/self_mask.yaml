@@ -1,0 +1,4 @@
+# No geometry has been confirmed as device-self yet.
+self_mask_enabled: false
+self_mask_frame: livox_frame
+self_boxes: []
