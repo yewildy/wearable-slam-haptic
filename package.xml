@@ -63,4 +63,4 @@
     <!-- Other tools can request additional information be placed here -->
 
   </export>
-</package>
+<build_depend>roscpp</build_depend><build_export_depend>roscpp</build_export_depend><exec_depend>roscpp</exec_depend><build_depend>diagnostic_msgs</build_depend><build_export_depend>diagnostic_msgs</build_export_depend><exec_depend>diagnostic_msgs</exec_depend><build_depend>livox_ros_driver2</build_depend><build_export_depend>livox_ros_driver2</build_export_depend><build_depend>libpcl-all-dev</build_depend><build_export_depend>libpcl-all-dev</build_export_depend><exec_depend>libpcl-all</exec_depend></package>

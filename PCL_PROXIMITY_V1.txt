@@ -1,0 +1,35 @@
+PCL proximity prototype
+
+Build this catkin package with ROS Noetic, livox_ros_driver2 and PCL installed.
+source ~/haptic_ws/devel/setup.bash
+roslaunch haptic_feedback pcl_proximity.launch
+
+This launches only the proximity node. Start the real driver separately, without
+duplicating an already running driver. Input: /livox/lidar, driver2 CustomMsg.
+Observe: rostopic echo /haptic/proximity/diagnostics
+
+Finite/nonzero XYZ -> range candidates -> PCL RadiusOutlierRemoval -> nearest
+supported range -> software level. No object-motion classification or motor.
+Defaults: candidate range 0.2-5 m; support radius 0.08 m; neighbor parameter 3.
+Levels: <=0.5 m strong (3), <=1 m medium (2), <=2 m weak (1), farther (0).
+Release hysteresis 0.1 m / 2 frames. Input arrival timeout 0.5 s -> NaN / 255.
+255 is UNKNOWN, not motor PWM. Level 0 does NOT mean safe.
+Sub-0.2 m returns are reported as near-field uncertainty, not silently cleared.
+All parameters are examples, not validated safety thresholds.
+
+Source: src/pcl_proximity_node.cpp. Parameters: launch/pcl_proximity.launch.
+Existing Python demos and mapping software remain separate and unchanged.
+No body/ground/direction/tag filtering. Thin or sparse obstacles can be removed.
+Header freshness is not yet validated; watchdog checks arrival time only.
+Mixed Boost filesystem 1.71/1.83 was observed on the development Jetson;
+no system library was replaced. Long-running real-data stability is unverified.
+
+2026-10-22: 13 synthetic cases, startup/dropout/recovery and invalid-parameter
+checks passed. Test correlation uses frame_id because ROS updates header.seq.
+Real target distances, false-positive/negative rates and motor output untested.
+The live node was verified to report STALE_OR_NO_DATA without a lidar publisher.
+
+PCL filter documentation:
+https://pointclouds.org/documentation/tutorials/remove_outliers.html
+Rusu and Cousins, 3D is here: Point Cloud Library (PCL), ICRA 2011.
+DOI: 10.1109/ICRA.2011.5980567

@@ -1,0 +1,88 @@
+{
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case": 1,
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "distance_m": null
+    },
+    {
+      "case": 2,
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "distance_m": null
+    },
+    {
+      "case": 3,
+      "state": "NEAR_FIELD_UNCERTAIN",
+      "level": "UNKNOWN",
+      "distance_m": null
+    },
+    {
+      "case": 4,
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "distance_m": null
+    },
+    {
+      "case": 5,
+      "state": "STRONG",
+      "level": "3",
+      "distance_m": 0.4
+    },
+    {
+      "case": 6,
+      "state": "STRONG",
+      "level": "3",
+      "distance_m": 0.53
+    },
+    {
+      "case": 7,
+      "state": "MEDIUM",
+      "level": "2",
+      "distance_m": 0.8
+    },
+    {
+      "case": 8,
+      "state": "WEAK",
+      "level": "1",
+      "distance_m": 1.5
+    },
+    {
+      "case": 9,
+      "state": "NO_NEAR_CANDIDATE",
+      "level": "0",
+      "distance_m": 3.0
+    },
+    {
+      "case": 10,
+      "state": "WEAK",
+      "level": "1",
+      "distance_m": 1.5
+    },
+    {
+      "case": 11,
+      "state": "STRONG;NEAR_FIELD_UNCERTAIN",
+      "level": "3",
+      "distance_m": 0.4
+    },
+    {
+      "case": 12,
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "distance_m": null
+    },
+    {
+      "case": 13,
+      "state": "STRONG",
+      "level": "3",
+      "distance_m": 0.4
+    }
+  ],
+  "parameter_validation_passed": true,
+  "startup_and_dropout_unknown_passed": true,
+  "physical_motor_tested": false,
+  "isolated_master_port": 11324,
+  "temporary_master_stopped": true
+}
