@@ -33,6 +33,12 @@ class ProximityNode {
     private_.param("stale_timeout", timeout_, 0.5);
     private_.param("self_mask_enabled", mask_enabled_, false);
     private_.param<std::string>("self_mask_frame", mask_frame_, "livox_frame");
+    XmlRpc::XmlRpcValue identity;
+    if (private_.getParam("self_identity_confirmed", identity)) {
+      if (identity.getType() != XmlRpc::XmlRpcValue::TypeBoolean)
+        throw std::runtime_error("self_identity_confirmed must be a boolean");
+      identity_confirmed_ = static_cast<bool>(identity);
+    }
     XmlRpc::XmlRpcValue boxes;
     if (private_.getParam("self_boxes", boxes)) {
       if (boxes.getType() != XmlRpc::XmlRpcValue::TypeArray)
@@ -80,6 +86,8 @@ class ProximityNode {
     subscriber_ = node_.subscribe(input_topic_, 1, &ProximityNode::cloud, this);
     timer_ = node_.createWallTimer(ros::WallDuration(0.1), &ProximityNode::watchdog, this);
     ROS_WARN("PCL PROTOTYPE: all visible directions, no body/ground/tag filter, no motor control");
+    if (mask_enabled_ && !identity_confirmed_)
+      ROS_WARN("Unconfirmed candidate geometry enabled; masked space is unknown, not free");
   }
 
  private:
@@ -138,6 +146,12 @@ class ProximityNode {
     value(status, "self_mask_enabled", mask_enabled_ ? "true" : "false");
     value(status, "self_mask_frame", mask_frame_);
     value(status, "self_mask_box_count", std::to_string(boxes_.size()));
+    value(status, "self_identity_confirmed", identity_confirmed_ ? "true" : "false");
+    value(status, "self_mask_review_state", !mask_enabled_ ? "DISABLED" :
+          identity_confirmed_ ? "USER_CONFIRMED" : "CANDIDATE_UNCONFIRMED");
+    value(status, "self_mask_confirmation_basis", identity_confirmed_ ?
+          "explicit_configuration_only" : "not_confirmed");
+    value(status, "masked_space_occupancy", mask_enabled_ ? "unknown_not_free" : "not_inferred_by_mask");
     array.status.push_back(status);
     diagnostics_pub_.publish(array);
   }
@@ -245,6 +259,7 @@ class ProximityNode {
   struct Box { Eigen::Vector4f min, max; };
   std::vector<Box> boxes_;
   bool mask_enabled_ = false;
+  bool identity_confirmed_ = false;
   std::string mask_frame_;
   std::string input_topic_;
   double min_range_, max_range_, radius_, weak_, medium_, strong_, hysteresis_, timeout_;
