@@ -1,0 +1,75 @@
+Offline support-radius study 2026-10-23
+
+Decision
+Keep the current default support radius at 0.08 m. The study demonstrates a
+tradeoff, not an optimal parameter or an accuracy improvement. Neither the
+existing live source/binary nor default profile was replaced or retuned.
+
+Scope and reproduction
+study_support_radius.py uses the separately built provenance-enabled binary,
+an existing raw bag, and its current near_returns.npz export. It does not start
+a driver, camera, mapping, recorder or motor. It uses a private ROS master,
+synthetic test topics and an explicit executable path; only owned processes
+are stopped. Keep compare_saved_bag.py and replay_candidate.py beside it.
+
+source ~/haptic_ws/devel/setup.bash
+python3 study_support_radius.py /path/to/raw.bag /path/to/near_returns.npz /path/to/isolated/pcl_proximity_node /path/to/private_output_root
+python3 test_support_radius_study.py
+
+The tool chooses 15 evenly spaced frames from the saved 141-frame recording:
+indices 0,10,20,...,140. For these selected frames, finite nonzero returns within
+0.5 m matched the saved NPZ exactly, including frame name, timestamp and point
+order. This checks input correspondence, not self identity. The selected frames
+remain part of the same static scene, not independent validation scenes.
+
+Only support_radius changes: 0.04, 0.08, 0.12 m. All three runs have mask disabled,
+min_range 0.2 m, max_range 5 m, min_neighbors 3 and unchanged reminder thresholds,
+hysteresis and timeout. This is request/response replay of selected messages,
+not recorded-time playback, a speed benchmark or an end-to-end latency test.
+
+Saved-frame result                 0.04 m       0.08 m        0.12 m
+Complete unique matched frames    15           15            15
+Mean supported points/frame       4553.867     11173.533     13904.000
+Mean nearest supported range (m)  0.200937     0.200903      0.200831
+Near-field uncertainty frames     15           15            15
+Unknown-level frames              0            0             0
+
+All 15 paired frames retained a nondecreasing number of supported points as the
+radius increased. This is a software consistency observation, not a reason to
+call the larger radius more accurate. Every selected frame still produced
+STRONG;NEAR_FIELD_UNCERTAIN. Changing this radius did not resolve the near returns.
+
+Three artificial arrangements at each radius
+The final result after four consecutive inputs is reported to settle the
+existing release hysteresis, rather than confusing its history with filtering.
+- Dense target at 0.6 m: retained at all three radii, MEDIUM.
+- Four sparse square-corner target returns near 0.6 m, with background at 1.5 m:
+  radii 0.04/0.08 remove all four target points and report the background, WEAK;
+  radius 0.12 retains them and reports 0.601498 m, MEDIUM.
+- Single return at 0.5 m near a supported wall at 0.59 m:
+  radii 0.04/0.08 remove that single return and report 0.59 m, MEDIUM;
+  radius 0.12 lets it borrow wall neighbors and reports 0.5 m, STRONG.
+The last arrangement is deliberately synthetic. There is no evidence that a
+real return with that geometry is noise, nor a measured real false-alarm rate.
+
+Interpretation
+A tighter neighborhood can remove sparse real targets. A wider one can also
+admit isolated returns supported by another surface. More retained points and
+a smaller reported range are not sufficient to choose the final parameter.
+There is still no known-distance/labelled dynamic or wearable test set. Do not
+raise the near cutoff to hide returns or silently replace the current defaults.
+
+Verification and files
+9 pure tests passed on Windows and Jetson. All 45 selected-frame outputs paired
+uniquely, without missing, duplicate or unexpected headers. Nine synthetic
+radius/arrangement combinations were observed. The temporary master stopped;
+hash checks confirmed original bag, NPZ, isolated binary, live source/binary and
+default profile unchanged. No new build or live collection was needed.
+The screened support_radius_summary.json contains aggregate results only.
+radius_private.json includes per-frame diagnostics, configuration and executable
+fingerprints and stays private, along with all raw data and internal logs.
+
+The finite night-session work now needs a concise Chinese morning review and
+handoff. Previously tested stale/frame/parameter failure cases already cover
+the identified software boundary problems; no additional algorithm patch is
+justified by these unlabelled static observations alone.
