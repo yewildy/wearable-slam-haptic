@@ -7,12 +7,15 @@
 #include <std_msgs/String.h>
 #include <std_msgs/UInt8.h>
 #include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/filters/crop_box.h>
+#include <XmlRpcValue.h>
 #include <pcl/point_types.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 class ProximityNode {
  public:
@@ -28,6 +31,40 @@ class ProximityNode {
     private_.param("hysteresis", hysteresis_, 0.1);
     private_.param("release_frames", release_frames_, 2);
     private_.param("stale_timeout", timeout_, 0.5);
+    private_.param("self_mask_enabled", mask_enabled_, false);
+    private_.param<std::string>("self_mask_frame", mask_frame_, "livox_frame");
+    XmlRpc::XmlRpcValue boxes;
+    if (private_.getParam("self_boxes", boxes)) {
+      if (boxes.getType() != XmlRpc::XmlRpcValue::TypeArray)
+        throw std::runtime_error("self_boxes must be an array");
+      for (int i = 0; i < boxes.size(); ++i) {
+        if (boxes[i].getType() != XmlRpc::XmlRpcValue::TypeStruct ||
+            !boxes[i].hasMember("min") || !boxes[i].hasMember("max"))
+          throw std::runtime_error("Each self box requires min and max");
+        Box box;
+        for (const auto* key : {"min", "max"}) {
+          auto& values = boxes[i][key];
+          if (values.getType() != XmlRpc::XmlRpcValue::TypeArray || values.size() != 3)
+            throw std::runtime_error("Box bounds require three numbers");
+          for (int j = 0; j < 3; ++j) {
+            const auto type = values[j].getType();
+            if (type != XmlRpc::XmlRpcValue::TypeDouble && type != XmlRpc::XmlRpcValue::TypeInt)
+              throw std::runtime_error("Box bounds must be numeric");
+            const double v = type == XmlRpc::XmlRpcValue::TypeDouble ?
+                static_cast<double>(values[j]) : static_cast<int>(values[j]);
+            if (!std::isfinite(v) || std::abs(v) > 1000)
+              throw std::runtime_error("Invalid box bound");
+            (std::string(key) == "min" ? box.min : box.max)[j] = static_cast<float>(v);
+          }
+        }
+        box.min[3] = box.max[3] = 1;
+        if (!(box.min.head<3>().array() < box.max.head<3>().array()).all())
+          throw std::runtime_error("Box min must be less than max");
+        boxes_.push_back(box);
+      }
+    }
+    if (mask_enabled_ && (boxes_.empty() || mask_frame_.empty()))
+      throw std::runtime_error("Enabled self mask requires boxes and a frame");
     if (!(std::isfinite(min_range_) && std::isfinite(max_range_) &&
           std::isfinite(radius_) && std::isfinite(weak_) && std::isfinite(medium_) &&
           std::isfinite(strong_) && std::isfinite(hysteresis_) && std::isfinite(timeout_) &&
@@ -97,7 +134,10 @@ class ProximityNode {
     value(status, "level", level < 0 ? "UNKNOWN" : std::to_string(level));
     value(status, "input_topic", input_topic_);
     value(status, "motor_control", "disabled");
-    value(status, "scope", "all_visible_directions_no_body_ground_or_tag_filter");
+    value(status, "scope", "all_visible_directions_optional_geometry_mask_no_ground_or_tag_filter");
+    value(status, "self_mask_enabled", mask_enabled_ ? "true" : "false");
+    value(status, "self_mask_frame", mask_frame_);
+    value(status, "self_mask_box_count", std::to_string(boxes_.size()));
     array.status.push_back(status);
     diagnostics_pub_.publish(array);
   }
@@ -106,13 +146,39 @@ class ProximityNode {
     received_ = true;
     last_received_ = started;
     stale_ = false;
+    if (mask_enabled_ && msg->header.frame_id != mask_frame_) {
+      level_ = -1;
+      release_count_ = 0;
+      diagnostic_msgs::DiagnosticStatus status;
+      status.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      publish(std::numeric_limits<double>::quiet_NaN(), -1, "SELF_MASK_FRAME_MISMATCH", status, msg->header);
+      return;
+    }
     size_t zero = 0, invalid = 0, near = 0, far = 0;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr input(new pcl::PointCloud<pcl::PointXYZ>);
-    input->reserve(msg->points.size());
-    double before = std::numeric_limits<double>::infinity();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr finite(new pcl::PointCloud<pcl::PointXYZ>);
+    finite->reserve(msg->points.size());
     for (const auto& p : msg->points) {
       if (!(std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z))) { ++invalid; continue; }
       if (p.x == 0 && p.y == 0 && p.z == 0) { ++zero; continue; }
+      finite->push_back(pcl::PointXYZ(p.x, p.y, p.z));
+    }
+    const size_t finite_count = finite->size();
+    if (mask_enabled_) {
+      for (const auto& box : boxes_) {
+        pcl::CropBox<pcl::PointXYZ> crop;
+        crop.setInputCloud(finite);
+        crop.setMin(box.min);
+        crop.setMax(box.max);
+        crop.setNegative(true);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr remaining(new pcl::PointCloud<pcl::PointXYZ>);
+        crop.filter(*remaining);
+        finite.swap(remaining);
+      }
+    }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr input(new pcl::PointCloud<pcl::PointXYZ>);
+    input->reserve(msg->points.size());
+    double before = std::numeric_limits<double>::infinity();
+    for (const auto& p : *finite) {
       const double d = std::hypot(std::hypot(double(p.x), double(p.y)), double(p.z));
       if (d < min_range_) { ++near; continue; }
       if (d > max_range_) { ++far; continue; }
@@ -134,6 +200,7 @@ class ProximityNode {
     value(status, "input_points", std::to_string(msg->points.size()));
     value(status, "declared_count_matches", msg->point_num == msg->points.size() ? "true" : "false");
     value(status, "zero_points", std::to_string(zero));
+    value(status, "self_masked_points", std::to_string(finite_count - finite->size()));
     value(status, "nonfinite_points", std::to_string(invalid));
     value(status, "near_untrusted_points", std::to_string(near));
     value(status, "far_excluded_points", std::to_string(far));
@@ -175,6 +242,10 @@ class ProximityNode {
   ros::Publisher distance_pub_, level_pub_, state_pub_, diagnostics_pub_;
   ros::WallTimer timer_;
   ros::WallTime last_received_;
+  struct Box { Eigen::Vector4f min, max; };
+  std::vector<Box> boxes_;
+  bool mask_enabled_ = false;
+  std::string mask_frame_;
   std::string input_topic_;
   double min_range_, max_range_, radius_, weak_, medium_, strong_, hysteresis_, timeout_;
   int neighbors_, release_frames_, level_ = -1, release_count_ = 0;
