@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "scope": "paired_full_cloud_offline_PCL_replay",
+  "frames_expected": 141,
+  "header_duration_seconds": 13.999582767,
+  "header_gap_seconds": {
+    "count": 140,
+    "min": 0.097838164,
+    "mean": 0.09999701976428571,
+    "median": 0.0999629495,
+    "p95": 0.10021185925000001,
+    "max": 0.101985931
+  },
+  "replay_rate": 1.0,
+  "parameters": {
+    "min_range": 0.2,
+    "max_range": 5.0,
+    "support_radius": 0.08,
+    "min_neighbors": 3,
+    "weak_distance": 2.0,
+    "medium_distance": 1.0,
+    "strong_distance": 0.5,
+    "hysteresis": 0.1,
+    "release_frames": 2,
+    "stale_timeout": 0.5
+  },
+  "mask_identity": "unconfirmed_candidate_isolated_trial_only_live_default_unchanged",
+  "validation_scope": "same_static_recording_used_to_fit_candidate_not_independent_validation",
+  "phases": {
+    "baseline": {
+      "frames_expected": 141,
+      "frames_matched": 141,
+      "missing_frames": 0,
+      "duplicate_outputs": 0,
+      "unexpected_outputs": 0,
+      "complete_unique_headers": true,
+      "states": {
+        "STRONG;NEAR_FIELD_UNCERTAIN": 141
+      },
+      "unknown_level_frames": 0,
+      "invalid_or_missing_level_frames": 0,
+      "near_field_uncertain_frames": 141,
+      "frame_mismatch_outputs": 0,
+      "unsupported_closer_return_frames": 1,
+      "metrics": {
+        "distance_m": {
+          "count": 141,
+          "min": 0.200012,
+          "mean": 0.20078275886524824,
+          "median": 0.200534,
+          "p95": 0.202388,
+          "max": 0.20358
+        },
+        "self_masked_points": {
+          "count": 141,
+          "min": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "max": 0.0
+        },
+        "near_untrusted_points": {
+          "count": 141,
+          "min": 367.0,
+          "mean": 439.6170212765957,
+          "median": 441.0,
+          "p95": 476.0,
+          "max": 511.0
+        },
+        "range_points": {
+          "count": 141,
+          "min": 15186.0,
+          "mean": 15346.872340425532,
+          "median": 15346.0,
+          "p95": 15502.0,
+          "max": 15592.0
+        },
+        "supported_points": {
+          "count": 141,
+          "min": 10776.0,
+          "mean": 11175.82269503546,
+          "median": 11197.0,
+          "p95": 11366.0,
+          "max": 11553.0
+        },
+        "removed_by_support": {
+          "count": 141,
+          "min": 3890.0,
+          "mean": 4171.0496453900705,
+          "median": 4185.0,
+          "p95": 4364.0,
+          "max": 4434.0
+        },
+        "processing_ms": {
+          "count": 141,
+          "min": 34.908241,
+          "mean": 36.049724418439716,
+          "median": 35.995765,
+          "p95": 36.536775,
+          "max": 54.135523
+        }
+      },
+      "playback_process_wall_seconds": 15.457533236000017,
+      "watchdog_messages_during_capture_window": 11,
+      "mask_enabled_for_isolated_trial": false
+    },
+    "candidate_trial": {
+      "frames_expected": 141,
+      "frames_matched": 141,
+      "missing_frames": 0,
+      "duplicate_outputs": 0,
+      "unexpected_outputs": 0,
+      "complete_unique_headers": true,
+      "states": {
+        "MEDIUM": 141
+      },
+      "unknown_level_frames": 0,
+      "invalid_or_missing_level_frames": 0,
+      "near_field_uncertain_frames": 0,
+      "frame_mismatch_outputs": 0,
+      "unsupported_closer_return_frames": 21,
+      "metrics": {
+        "distance_m": {
+          "count": 141,
+          "min": 0.905349,
+          "mean": 0.9492413971631206,
+          "median": 0.950813,
+          "p95": 0.964934,
+          "max": 0.96695
+        },
+        "self_masked_points": {
+          "count": 141,
+          "min": 423.0,
+          "mean": 496.6737588652482,
+          "median": 499.0,
+          "p95": 531.0,
+          "max": 567.0
+        },
+        "near_untrusted_points": {
+          "count": 141,
+          "min": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "max": 0.0
+        },
+        "range_points": {
+          "count": 141,
+          "min": 15134.0,
+          "mean": 15289.81560283688,
+          "median": 15287.0,
+          "p95": 15454.0,
+          "max": 15533.0
+        },
+        "supported_points": {
+          "count": 141,
+          "min": 10727.0,
+          "mean": 11119.659574468085,
+          "median": 11140.0,
+          "p95": 11317.0,
+          "max": 11494.0
+        },
+        "removed_by_support": {
+          "count": 141,
+          "min": 3890.0,
+          "mean": 4170.156028368794,
+          "median": 4184.0,
+          "p95": 4364.0,
+          "max": 4434.0
+        },
+        "processing_ms": {
+          "count": 141,
+          "min": 34.835792,
+          "mean": 35.739176226950356,
+          "median": 35.611914,
+          "p95": 36.179644,
+          "max": 53.147269
+        }
+      },
+      "playback_process_wall_seconds": 15.508192355000574,
+      "watchdog_messages_during_capture_window": 11,
+      "mask_enabled_for_isolated_trial": true
+    }
+  },
+  "paired": {
+    "paired_headers": 141,
+    "finite_distance_pairs": 141,
+    "candidate_minus_baseline_distance_m": {
+      "count": 141,
+      "min": 0.705024,
+      "mean": 0.7484586382978723,
+      "median": 0.750149,
+      "p95": 0.7633869999999999,
+      "max": 0.7662709999999999
+    },
+    "state_transitions": {
+      "STRONG;NEAR_FIELD_UNCERTAIN -> MEDIUM": 141
+    }
+  },
+  "temporary_master_stopped": true,
+  "limitations": [
+    "No target distance reference, self labels or real false-alarm/miss-rate measurement",
+    "Unknown level and near-field uncertainty are different and reported separately",
+    "Masked or occluded space remains unknown occupancy, not evidence of free space",
+    "Processing time is callback work, not sensor-to-alert latency or a controlled benchmark",
+    "Playback wall time includes player startup; single sequential runs are order/load dependent",
+    "No live sensor, camera, mapping, motor or default-profile change"
+  ]
+}

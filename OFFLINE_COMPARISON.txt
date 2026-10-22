@@ -1,0 +1,82 @@
+Paired full-cloud replay comparison 2026-10-22
+
+Purpose
+compare_saved_bag.py replays the same saved raw LiDAR frames twice through the
+current PCL node: once without a mask, once with an unconfirmed candidate mask.
+It does not start a driver, record a new bag or modify the live default profile.
+This is a filtering-path comparison, not a range-accuracy or safety experiment.
+
+Run on a ROS Noetic machine with haptic_feedback built
+Keep compare_saved_bag.py and the current replay_candidate.py in the same tools
+folder. NumPy and the existing ROS/PyYAML modules are required; no new package
+installation was needed on the tested device.
+source ~/haptic_ws/devel/setup.bash
+python3 /path/to/compare_saved_bag.py /path/to/saved_cloud_directory
+
+The input directory must contain raw.bag and candidate_mask.yaml. Candidate
+must be disabled and explicitly unconfirmed. The tool validates all LiDAR frame
+names and strictly increasing header timestamps before starting a test master.
+It refuses an occupied test port, uses an isolated master and remaps the saved
+LiDAR stream to /haptic/offline_compare/lidar. Only its own processes are stopped.
+Playback is 1x. New comparison_TIMESTAMP/ output does not overwrite prior runs.
+
+Files
+comparison_private.json contains per-frame diagnostics and geometry/parameter
+snapshots. Keep it private, along with the bag and candidate configuration.
+comparison_summary.json contains aggregate counts, metrics and limitations,
+without geometry, raw points, per-frame headers or input filesystem paths.
+Always review any output before public upload. This repository includes only
+the screened aggregate report and source/tests, not the scene inputs.
+
+Results on the saved static sample
+Both phases matched all 141 unique input headers, spanning 13.999583 seconds.
+No missing, duplicate, unexpected or frame-mismatch output was found. All
+reported metric fields had 141 finite values; unknown-level counts were zero.
+This does NOT mean the covered space was safe or that a mask is calibrated.
+
+Metric                                  Baseline         Candidate trial
+Distance minimum (m)                    .200012          .905349
+Distance mean (m)                       .200783          .949241
+Distance maximum (m)                    .203580          .966950
+State                                   STRONG+near      MEDIUM
+Frames with near-field uncertainty      141              0
+Masked points/frame mean                0                496.674
+Supported points/frame mean             11175.823        11119.660
+Closer return removed by support flag   1 frame          21 frames
+Callback processing mean / P95 (ms)      36.050/36.537    35.739/36.180
+Callback processing max (ms)             54.136           53.147
+Player process wall time (s)             15.458           15.508
+
+Paired mean distance change was +0.748459 m. It measures which returns survive
+the processing chain, not improvement in measured accuracy. The absence of the
+near-field flag after masking reflects removal before that counter is computed;
+it is not evidence of restored visibility or confirmed self identity. The support
+flag means an even closer in-range return was removed by neighborhood support;
+there are no labels proving whether those returns were noise or real objects.
+
+Each capture window also contained 11 headerless watchdog messages, counted
+separately from the 141 matched LiDAR outputs. The window includes player startup;
+these counts alone do not locate or establish real sensor interruptions.
+UNKNOWN level, near-field uncertainty and unknown occupancy are different ideas.
+
+Timing caveats
+These are two single sequential runs, not randomized repeated benchmarks.
+Callback processing_ms is not sensor-to-warning latency. Player wall time
+includes startup. The small difference in processing averages does not establish
+a speed improvement, deadline guarantee or wearable real-time performance.
+
+Validation limits
+The same static recording was used to fit the candidate. This is not independent
+validation and has no known target distance reference, self labels or real-world
+false-alarm/miss-rate measurement. The earlier mask-risk counterexamples show
+external thin poles can disappear inside a box; read MASK_RISK_AUDIT.txt too.
+Masked and occluded areas remain unknown, even when a farther point is reported.
+
+Verification
+python3 test_compare_saved_bag.py
+16 pure tests passed on Windows and Jetson. They cover exact header pairing,
+duplicates/missing/unexpected frames, nonfinite distances, missing metrics,
+unknown versus uncertainty, full-bag frame/timestamp validation and privacy
+allowlisting. The actual two-phase PCL replay paired all 141 frames. The temporary
+master stopped. Node source, default mask, original bag and input candidate were
+hash-checked unchanged. No live LiDAR, camera, mapping or motor was used.
