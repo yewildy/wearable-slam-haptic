@@ -1,0 +1,22 @@
+{
+  "local_unit_tests_passed": 13,
+  "jetson_unit_tests_passed": 13,
+  "existing_real_bag_reanalyzed": true,
+  "frames": 141,
+  "near_points_unchanged": true,
+  "data_quality": {
+    "candidate_eligible": true,
+    "candidate_block_reasons": [],
+    "invalid_header_timestamp_frames": 0,
+    "non_increasing_header_transitions": 0,
+    "declared_count_mismatch_frames": 0,
+    "header_gap_seconds": {
+      "min": 0.09783816337585449,
+      "median": 0.09996294975280762,
+      "max": 0.10198593139648438
+    },
+    "note": "Eligibility is data consistency only, not confirmation of self geometry or data freshness."
+  },
+  "live_recording_started": false,
+  "driver_or_mapping_changed": false
+}

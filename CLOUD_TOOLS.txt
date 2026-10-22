@@ -24,6 +24,18 @@ near_voxels.csv            2 cm voxel centers and frame occurrence fractions.
 analysis.json              Counts, ranges, coordinates, tags and baseline states.
 candidate_mask.yaml        Observed near bounding box + 2 cm margin, DISABLED.
 
+Analysis quality checks (2026-10-22 evening):
+analysis.json now includes data_quality: header gap min/median/max, invalid or
+non-increasing timestamps, declared point-count mismatches and candidate eligibility.
+Candidate generation is blocked for mixed/blank coordinate frames, invalid or
+non-increasing timestamps, count mismatches or no nonzero near returns. Diagnostic
+exports remain available for inspection. Eligibility is NOT self identification
+or proof that recorded messages are fresh. NPZ also stores each frame's name.
+Run test_capture_analysis.py with Python/NumPy; 13 mock-bag unit tests passed on
+Windows and Jetson. The saved 141-frame raw bag was reanalyzed without recording:
+zero timestamp/count anomalies, ~0.100 s median header gap, same 70031 near points.
+This change does not alter the live detector or its default mask.
+
 Analyze an existing bag without recording:
 rosrun haptic_feedback capture_near_cloud.py --bag /absolute/path/to/raw.bag
 This creates a separate analysis directory; it does not overwrite the input.
