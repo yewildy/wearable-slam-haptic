@@ -1,0 +1,26 @@
+<launch>
+  <arg name="input_topic" default="/livox/lidar"/>
+  <arg name="min_range" default="0.2"/>
+  <arg name="max_range" default="5.0"/>
+  <arg name="support_radius" default="0.08"/>
+  <arg name="min_neighbors" default="3"/>
+  <arg name="weak_distance" default="2.0"/>
+  <arg name="medium_distance" default="1.0"/>
+  <arg name="strong_distance" default="0.5"/>
+  <arg name="hysteresis" default="0.1"/>
+  <arg name="release_frames" default="2"/>
+  <arg name="stale_timeout" default="0.5"/>
+  <node pkg="haptic_feedback" type="pcl_proximity_node" name="haptic_proximity_node" output="screen">
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="min_range" value="$(arg min_range)"/>
+    <param name="max_range" value="$(arg max_range)"/>
+    <param name="support_radius" value="$(arg support_radius)"/>
+    <param name="min_neighbors" value="$(arg min_neighbors)"/>
+    <param name="weak_distance" value="$(arg weak_distance)"/>
+    <param name="medium_distance" value="$(arg medium_distance)"/>
+    <param name="strong_distance" value="$(arg strong_distance)"/>
+    <param name="hysteresis" value="$(arg hysteresis)"/>
+    <param name="release_frames" value="$(arg release_frames)"/>
+    <param name="stale_timeout" value="$(arg stale_timeout)"/>
+  </node>
+</launch>
