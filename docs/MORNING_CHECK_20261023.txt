@@ -1,0 +1,94 @@
+障碍感知软件次日检查指南
+2026年10月23日
+
+先看结论
+软件现在可以从点云计算距离、输出提醒等级，并用局部几何盒排除指定位置的点。
+今晚补了离线输入检查、回放、误删反例、对照报告和屏蔽来源诊断。
+但它还不能自动确定哪些点属于支架，也没有控制马达。默认屏蔽仍然关闭。
+我的目标是距离越近提醒越强，不要求先判断物体自己有没有运动。
+
+1. 今晚实际查到了什么
+已有记录共141帧。完整回放时，不屏蔽的平均最近距离约0.201 m；
+启用这份场景拟合的候选盒后约0.949 m，141帧都处理到了。
+这只证明过滤和重新计算起作用，不代表距离更准确或误报减少。
+盒子用同一份静止数据拟合，静止墙面和桌子也可能被包含进去。
+人工反例已经确认：盒内的外部细杆可以被全部删掉，只剩后面的背景。
+被屏蔽或遮挡的空间仍然未知，不能当成“前面没有障碍”。
+
+我比较了0.04、0.08、0.12 m三个邻域半径，固定选15帧，共45个结果。
+三个半径下仍然全部是强提醒加近场不确定，没有解决近点是什么的问题。
+小半径可能删掉稀疏目标，大半径也可能让单独近点借墙面的邻点通过。
+因此保留0.08 m默认值，不为了显示好看调高距离下限或扩大屏蔽。
+
+测试记录分别是：采样分析13项、回放边界19项、几何风险15项、
+完整回放汇总16项、半径研究9项纯测试，在Windows和Jetson都通过。
+另外实际PCL运行了6组误删对照；独立新版本通过13项来源诊断用例，
+以及原13项核心和7项屏蔽回归。测试有重用，不把这些数字相加当成独立实验数。
+断流、坐标系不符、非法参数和自有进程清理已有检查，不是长期可靠性证明。
+
+2. 哪个版本在哪里
+机器：NVIDIA Jetson Orin Nano Developer Kit 8GB，Ubuntu 20.04，ROS Noetic。
+现场工作空间：~/haptic_ws
+现场源文件：~/haptic_ws/src/haptic_feedback/src/pcl_proximity_node.cpp
+现场可执行文件：~/haptic_ws/devel/lib/haptic_feedback/pcl_proximity_node
+现场默认配置：~/haptic_ws/src/haptic_feedback/config/self_mask.yaml
+默认self_mask_enabled=false、self_boxes为空；距离范围0.2至5 m，邻域0.08 m。
+
+新增来源诊断只在以下独立工作空间编译测试，没有替换现场程序：
+~/haptic_ws/offline_checks/night05_mask_provenance_20261023
+公开仓库src/pcl_proximity_node.cpp也是这个新版本，不能把GitHub更新当成现场已更新。
+新字段DISABLED、CANDIDATE_UNCONFIRMED、USER_CONFIRMED表示配置声明状态。
+USER_CONFIRMED不是自动识别，也不是穿戴安全认证；不要只因拟合看起来好就设为true。
+
+3. 明天先怎样检查
+不需要先开雷达、相机、Point-LIO或电机。先读已有汇总，再决定要不要重放。
+在Jetson新终端中查看半径研究结果：
+
+python3 -m json.tool ~/haptic_ws/logs/20261023/support_radius_20261023_012634_453076/support_radius_summary.json
+
+想复现候选过滤的效果，可以在一个新终端中运行以下两行：
+
+source ~/haptic_ws/devel/setup.bash
+python3 ~/haptic_ws/tools/replay_candidate.py ~/bags/haptic/cloud_20261022_184739_914190
+
+最后一段是输入目录，里面需要raw.bag和candidate_mask.yaml，不是单独bag文件名。
+这一步会重新计算距离提醒，不是播放Point-LIO历史建图，也不会打开RViz。
+它只在独立ROS master中临时启用候选副本，不改现场默认配置；结束后清理自己的进程。
+按原录制速度播放；完成后看frames_expected/frames_processed、complete_frame_count、
+frame_mismatch_outputs和距离统计。完整处理不等于准确测距。
+终端最后的SAVED_DIRECTORY是本次新报告目录，报告为replay_candidate_report.json。
+每次生成独立replay_时间戳目录，不覆盖输入；端口被占用时先查原因，不杀全部ROS进程。
+
+原始bag：~/bags/haptic/cloud_20261022_184739_914190/raw.bag
+最新分析导出：~/bags/haptic/cloud_20261022_201447_344246/
+其中near_returns.npz带逐帧坐标系，旧导出没有这个字段，不能人为补成已验证数据。
+原包和场景拟合盒仍是私有研究资料，不在GitHub提供。
+
+4. 我下一步建议怎样采数据（尚未做，等我确认后再开始）
+先桌面固定测试，不急着戴上绕楼，也不需要成品机械原型或照片才能继续软件开发。
+先留一段固定装置和背景的20秒原始记录，再放一个宽箱子作清楚的外部目标。
+从雷达同一个测量参考点到箱子近表面，用尺量2.0、1.5、0.8、0.4 m，
+每档静止20秒，建议重复3次；记录位置、朝向、目标尺寸、参数和运行版本。
+再用细杆或窄目标补一组，检查邻域过滤会不会把它删掉。
+目标和场景要不同于今晚拟合的记录；场景未标注前，不计算“误报率/漏检率”。
+若复用支架或固定线缆，保留它们的实际安装状态，结合原始点云人工核对局部屏蔽。
+不能把启动时所有不动的点自动视为自己，也不能用一个整圈近距球把问题隐藏。
+先无屏蔽作对照，再只在隔离离线处理中比较经过审查的候选；暂不改变现场默认值。
+摄像头可选，用来核对目标摆放和时间，不是这一步软件开发的前置条件。
+固定测试解释清楚后，再另行讨论平地慢走。当前不做蒙眼、楼梯或依赖提醒保障安全的测试。
+
+5. 还不能下什么结论
+尚未验证真实测距误差、独立场景误报漏报、身体晃动、胸前朝向/地面过滤、
+动态接近速度、长时间稳定性、端到端延迟和穿戴安全。Boost混用警告仍未解决。
+UNKNOWN/255表示不知道，不是电机强度；等级0也不是安全认证。
+当前尚无马达控制，接线、供电和震动执行需要以后单独确认。
+
+6. 回家看哪些文件
+GitHub：yewildy/wearable-slam-haptic，docs/MORNING_CHECK_20261023.txt就是这份说明。
+docs/research-diary.docx：持续Word日记；docs/development-log.txt：可搜索的同内容文字。
+docs/CONTINUE_HERE.txt：下次从哪里继续。
+MASK_RISK_AUDIT.txt：为什么局部盒仍可能误删外物。
+OFFLINE_COMPARISON.txt：141帧完整回放对照及耗时限制。
+MASK_PROVENANCE.txt：新增来源字段及未部署边界。
+SUPPORT_RADIUS_STUDY.txt：三个邻域半径的作用和代价。
+今晚有限软件清单到此收尾。下一次由我决定先做哪个现场对照，不自动继续调参或部署。

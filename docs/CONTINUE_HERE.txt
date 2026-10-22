@@ -1,1 +1,7 @@
-2026-10-23 overnight step 6: study_support_radius.py compares only .04/.08/.12 m support radii on 15 fixed frames of the existing 141-frame static sample. Selected near returns exactly match the stored NPZ. All 45 frame outputs pair uniquely; 9 pure tests pass on Windows and Jetson. Mean supported counts 4553.867/11173.533/13904.000, but all frames still STRONG with near uncertainty. Synthetic sparse targets survive only at the widest radius, which also lets an isolated near return borrow wall support. These are tradeoffs, not measured accuracy or real false-alarm/miss rates. No default changed; .08 remains. Used the prior isolated provenance binary, without build/live collection. Inputs and live/isolated binaries unchanged, temporary master stopped. See SUPPORT_RADIUS_STUDY.txt. Remaining finite task: concise Chinese morning review and final handoff, then stop the night automation; do not keep tuning this unlabelled static sample or silently deploy the isolated source.
+2026-10-23 夜间有限任务收尾
+
+先读docs/MORNING_CHECK_20261023.txt，再读research-diary.docx尾部；development-log.txt可搜索。这轮已完成采样质量门禁、隔离回放边界、误删反例、141帧完整对照、来源诊断独立构建和三个邻域半径的小比较。没有为了延续任务继续调参。新增来源诊断没有部署到现场，公开src是独立测试版本；现场默认mask仍关闭，support_radius仍0.08m。
+
+这次只核对5个命令所需文件、传送并读回检查指南，以及核对原始输入/现场/独立版本哈希，未重新运行算法。过去的测试结果及真实失败见日记和各专项说明，不把检查文件当成新实验。静止样本不是自身身份、独立精度或穿戴安全的证据；屏蔽或遮挡空间仍未知。Boost混用警告尚未解决。
+
+下次由用户决定先做指南第4节的桌面已知距离对照，还是先审查局部自身几何。方案尚未执行；不要求成品机械原型或照片，不自动学习全部静止背景，不默认启动驱动/采集/建图/相机/马达或升级现场版本。后续每个实质批次继续追加第一人称Word日记并检查，再同步docs三份记录；保留真实日期和未验证项。不要公开原始点云、bag、场景几何、内网、密码、密钥或内部日志。
