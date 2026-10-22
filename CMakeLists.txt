@@ -15,9 +15,10 @@ install(TARGETS pcl_proximity_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DEST
 catkin_install_python(PROGRAMS
   scripts/haptic_feedback_node.py
   scripts/demo_livox_publisher.py
+  scripts/capture_near_cloud.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+install(DIRECTORY launch config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

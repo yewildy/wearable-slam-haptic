@@ -1,0 +1,51 @@
+{
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case": "self_and_external",
+      "state": "MEDIUM",
+      "level": "2",
+      "self_masked_points": "12"
+    },
+    {
+      "case": "self_only",
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "self_masked_points": "6"
+    },
+    {
+      "case": "mask_boundary",
+      "state": "NO_SUPPORTED_POINTS",
+      "level": "UNKNOWN",
+      "self_masked_points": "6"
+    },
+    {
+      "case": "outside_mask",
+      "state": "STRONG",
+      "level": "3",
+      "self_masked_points": "0"
+    },
+    {
+      "case": "external_near_uncertain",
+      "state": "NEAR_FIELD_UNCERTAIN",
+      "level": "UNKNOWN",
+      "self_masked_points": "0"
+    },
+    {
+      "case": "frame_mismatch",
+      "state": "SELF_MASK_FRAME_MISMATCH",
+      "level": "UNKNOWN",
+      "self_masked_points": null
+    },
+    {
+      "case": "recovery",
+      "state": "MEDIUM",
+      "level": "2",
+      "self_masked_points": "0"
+    }
+  ],
+  "overlapping_boxes_no_double_count": true,
+  "invalid_mask_parameters_rejected": true,
+  "physical_motor_tested": false,
+  "temporary_master_stopped": true
+}

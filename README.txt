@@ -1,6 +1,14 @@
 wearable-slam-haptic
 ===================
 
+2026-10-22 软件开发进度
+----------------------
+已加入PCL距离分档、可选的启动几何屏蔽配置，以及原始点云采样、PCD/NPZ/CSV分析导出。
+新功能操作与限制见CLOUD_TOOLS.txt和PCL_PROXIMITY_V1.txt。
+新增依赖为roscpp、diagnostic_msgs、PCL、rosbag、Python NumPy（以及ROS自带的Python模块）。
+机械原型和照片不是软件开发前置条件。自身几何尚未确认，默认屏蔽关闭；不是安全避障设备。
+下文保留最早的话题通信演示说明；“当前功能/尚未实现”等描述是该历史阶段的范围。
+
 我正在现有的Jetson、MID-360和Point-LIO装置上，逐步增加障碍感知与震动提醒。
 这个仓库当前是ROS 1话题通信原型，不是已经完成的避障或安全设备。
 

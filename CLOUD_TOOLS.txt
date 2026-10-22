@@ -1,0 +1,70 @@
+Raw cloud capture and local geometry filtering
+2026-10-22
+
+This is software-first prototype work. A finished wearable or mounting photos
+are not required to record and inspect clouds. Raw room data stay private.
+
+Record and analyze a short sample while the real driver is running:
+source ~/haptic_ws/devel/setup.bash
+rosrun haptic_feedback capture_near_cloud.py --seconds 15
+
+Each invocation creates a new directory under ~/bags/haptic/cloud_TIMESTAMP/.
+The recorder starts after a connection check, uses a 128 MB buffer and closes
+normally with SIGINT. Startup means the bag span may be shorter than the request.
+It records /livox/lidar, /livox/imu and /haptic/proximity/diagnostics.
+
+Files:
+raw.bag                    Original messages; do not edit or publish.
+parameters.json            Proximity parameters at capture time.
+source_hashes.json         Source/config hashes, not a running-binary attestation.
+last_valid_cloud.pcd       Last frame, finite nonzero XYZ only.
+near_returns.pcd           Aggregated nonzero returns within 0.5 m.
+near_returns.npz           Near XYZ, frame indices and header timestamps.
+near_voxels.csv            2 cm voxel centers and frame occurrence fractions.
+analysis.json              Counts, ranges, coordinates, tags and baseline states.
+candidate_mask.yaml        Observed near bounding box + 2 cm margin, DISABLED.
+
+Analyze an existing bag without recording:
+rosrun haptic_feedback capture_near_cloud.py --bag /absolute/path/to/raw.bag
+This creates a separate analysis directory; it does not overwrite the input.
+
+Geometry filter:
+Source: src/pcl_proximity_node.cpp
+Default configuration: config/self_mask.yaml (disabled and empty)
+The launch loads this configuration at startup, or a custom file can be supplied:
+roslaunch haptic_feedback pcl_proximity.launch self_mask_config:=/absolute/path/profile.yaml
+
+Profile keys: self_mask_enabled, self_mask_frame, self_boxes.
+Each box has min: [x,y,z] and max: [x,y,z] in metres in the named input frame.
+PCL CropBox removes points inside enabled boxes before range/support filtering.
+Overlapping boxes do not double-count removals. A frame mismatch reports UNKNOWN.
+Diagnostics include self_mask_enabled, self_mask_box_count and self_masked_points.
+Enabled-empty or invalid boxes fail startup, rather than accepting unsafe input.
+
+Candidate geometry is NOT automatically enabled or certified as device-self.
+Static walls and furniture also persist. A fitted box can cover empty space and
+external objects. A mask never restores visibility behind an occluding object.
+Keep small real obstacles in future tests; do not globally raise the near cutoff.
+
+Replay-only trial (copy replay_candidate.py from the repo to your tools folder):
+python3 ~/haptic_ws/tools/replay_candidate.py ~/bags/haptic/cloud_TIMESTAMP
+The script makes an explicitly enabled replay-only copy of the candidate file,
+uses an isolated ROS master on port 11326, reprocesses the raw lidar, reports
+results and stops its own processes. It does not change the live default profile.
+Keep the candidate disabled until its intended filtering scope is reviewed.
+
+Verification:
+13 previous synthetic cases still pass. Seven mask cases also pass, covering
+self/remaining points, boundaries, overlaps, near uncertainty, frame mismatch
+and recovery; empty and invalid masks are rejected. Test masters are stopped.
+A real 15-second recording window saved 141 lidar frames (~14 seconds), 2835 IMU
+messages and 142 diagnostics. PCD/NPZ/CSV exports and replay were exercised.
+A second 2-second capture command also completed, saving 12 lidar frames.
+On the first saved scene only, a candidate local mask changed the closest
+supported return from about 0.20 m to 0.905-0.967 m, all MEDIUM across 141 frames.
+This validates the filtering path, not target identity, range accuracy, reduced
+false alarms or wearable safety. The sample used to fit the box is not a held-out
+test. No camera, mapping or motors were started by these tools.
+Mixed Boost versions remain an unresolved runtime compatibility risk.
+
+Reference: https://pointclouds.org/documentation/classpcl_1_1_crop_box.html
