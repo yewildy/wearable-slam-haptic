@@ -1,0 +1,63 @@
+{
+  "synthetic_only": true,
+  "cases": [
+    {
+      "mask_enabled": false,
+      "case": "inside_thin_pole",
+      "state": "STRONG",
+      "distance_m": 0.3,
+      "masked_points": 0,
+      "removed_by_support": 0,
+      "supported_points": 15
+    },
+    {
+      "mask_enabled": false,
+      "case": "crossing_thin_pole",
+      "state": "STRONG",
+      "distance_m": 0.3,
+      "masked_points": 0,
+      "removed_by_support": 2,
+      "supported_points": 13
+    },
+    {
+      "mask_enabled": false,
+      "case": "outside_box",
+      "state": "STRONG",
+      "distance_m": 0.401,
+      "masked_points": 0,
+      "removed_by_support": 0,
+      "supported_points": 12
+    },
+    {
+      "mask_enabled": true,
+      "case": "inside_thin_pole",
+      "state": "MEDIUM",
+      "distance_m": 0.8,
+      "masked_points": 9,
+      "removed_by_support": 0,
+      "supported_points": 6
+    },
+    {
+      "mask_enabled": true,
+      "case": "crossing_thin_pole",
+      "state": "MEDIUM",
+      "distance_m": 0.8,
+      "masked_points": 7,
+      "removed_by_support": 2,
+      "supported_points": 6
+    },
+    {
+      "mask_enabled": true,
+      "case": "outside_box",
+      "state": "STRONG",
+      "distance_m": 0.401,
+      "masked_points": 0,
+      "removed_by_support": 0,
+      "supported_points": 12
+    }
+  ],
+  "temporary_master_stopped": true,
+  "live_lidar_used": false,
+  "physical_motor_tested": false,
+  "interpretation": "A legitimate external pole inside a mask is lost; outside remnants may also fail support. Not real-world miss rate."
+}

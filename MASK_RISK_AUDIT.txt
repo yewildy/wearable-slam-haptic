@@ -1,0 +1,65 @@
+Candidate mask risk audit 2026-10-22
+
+Conclusion
+A local geometry box can ignore a bracket only after its scope is reviewed.
+It cannot tell a bracket from an external object at the same coordinates.
+The live mask remains disabled. No mapping, driver or system changes were made.
+
+Reproduce without a LiDAR or ROS
+Use Python 3 and the already available NumPy. Keep these inputs private.
+python3 test_audit_mask_risk.py
+python3 audit_mask_risk.py /path/to/near_returns.npz /path/to/candidate_mask.yaml /path/to/new_report_directory
+
+The candidate file must be the JSON-compatible export from capture_near_cloud.py.
+Arbitrary YAML is not supported by this audit. The NPZ must include frame_names;
+for a legacy export, reanalyze the existing bag with the current capture tool.
+Do not record again just to update an export. Input candidate must be disabled
+and explicitly unconfirmed. Every frame must match its coordinate frame.
+The new report directory must not exist; raw input and previous results are not
+overwritten. mask_risk_private.json contains the fitted scene geometry: do not
+publish it. mask_risk_summary.json omits that geometry and input hashes; review
+it before publishing, as the aggregate counts still describe the sample.
+
+What was measured
+The 141-frame saved static sample has 70031 nonzero near points within 0.5 m.
+The original all-data candidate removes all 70031: this is a fit-data check,
+not accuracy. A separate box fitted only on the first 70 frames with a 2 cm
+margin removes all 34772 fit points and all 35259 points in the later 71 frames.
+Those later frames come from the SAME static recording, not an independent
+scene. Complete removal therefore does not establish correct self identity.
+Frame-level empty-near-sample counts are included, but empty does not mean safe.
+These are geometry counts only, not a replay of full-cloud PCL distance/levels.
+No known-distance reference, real false-alarm rate or miss rate is available.
+Two local audit runs produced identical JSON reports.
+
+Actual PCL counterexamples on an isolated ROS master
+python3 test_mask_risk_ros.py
+Requires ROS Noetic, haptic_feedback built, livox_ros_driver2 messages and the
+repo's replay_candidate.py beside the test. Source the haptic workspace first.
+It refuses an occupied test port, uses only synthetic /haptic/test/risk_cloud,
+does not join the live graph, and stops only its own processes.
+
+There are three artificial point arrangements, each with a supported background
+at 0.8 m. With no mask, the two near thin-pole arrangements report 0.3 m STRONG.
+With the synthetic box enabled:
+- A pole entirely inside the box loses all 9 points and reports the background
+  at 0.8 m MEDIUM. The external pole is absent from the final distance.
+- A pole crossing the box loses 7 points to the box and its 2 remaining points
+  to the support filter; the final result is again 0.8 m MEDIUM. The unmasked
+  arrangement also loses its two endpoint returns, but retains the nearer pole.
+- A supported object just outside the box remains at 0.401 m STRONG.
+This deliberately shows a software failure mode, not a measured physical miss
+rate. Exact box faces and one-float32-step outside are covered by pure tests;
+the current script mirrors axis-aligned float32 boxes, not transformed boxes.
+
+Verification and next decision
+15 pure tests pass on Windows and Jetson. The 6 enabled/disabled PCL cases pass;
+the temporary master stopped. Hash checks confirm the live node source, default
+mask and original raw bag were unchanged. No live sensor or motor was used.
+
+Keep candidate, confirmed and disabled meanings separate. This audit reports
+candidate provenance; the live node still exposes only enabled/frame/box count,
+not a new confirmation flag. Do not call that future diagnostic implemented.
+Next software step may compare full-cloud replay and report uncertain/unknown
+states and timing, without enabling a fitted scene box as a wearable default.
+Masked and occluded regions remain unobserved, not evidence of free space.

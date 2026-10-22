@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "analysis_kind": "geometry_only_near_sample",
+  "mask_provenance": "candidate_unconfirmed_disabled_input",
+  "self_identity_confirmed": false,
+  "live_defaults_changed": false,
+  "sample_frames": 141,
+  "sample_near_points": 70031,
+  "header_duration_seconds": 13.999582767486572,
+  "temporal_split": {
+    "fit_frame_indices": [
+      0,
+      70
+    ],
+    "heldout_frame_indices": [
+      70,
+      141
+    ],
+    "index_convention": "half-open ranges",
+    "independent_scene": false,
+    "note": "Later frames from the same static recording, not independent scene validation"
+  },
+  "supplied_all_data_candidate": {
+    "frame_count": 141,
+    "near_point_count": 70031,
+    "removed_near_points": 70031,
+    "remaining_near_points": 0,
+    "removed_fraction": 1.0,
+    "frames_without_near_points": 0,
+    "frames_with_all_near_points_removed": 141,
+    "removed_points_per_frame": {
+      "min": 423,
+      "mean": 496.6737588652482,
+      "max": 567
+    }
+  },
+  "fit_margin_m": 0.02,
+  "prefix_fit": {
+    "frame_count": 70,
+    "near_point_count": 34772,
+    "removed_near_points": 34772,
+    "remaining_near_points": 0,
+    "removed_fraction": 1.0,
+    "frames_without_near_points": 0,
+    "frames_with_all_near_points_removed": 70,
+    "removed_points_per_frame": {
+      "min": 423,
+      "mean": 496.74285714285713,
+      "max": 555
+    }
+  },
+  "same_scene_heldout": {
+    "frame_count": 71,
+    "near_point_count": 35259,
+    "removed_near_points": 35259,
+    "remaining_near_points": 0,
+    "removed_fraction": 1.0,
+    "frames_without_near_points": 0,
+    "frames_with_all_near_points_removed": 71,
+    "removed_points_per_frame": {
+      "min": 432,
+      "mean": 496.6056338028169,
+      "max": 567
+    }
+  },
+  "synthetic_geometry_counterexamples": [
+    {
+      "case": "external_thin_pole_inside_box",
+      "input_points": 9,
+      "removed_points": 9,
+      "remaining_points": 0
+    },
+    {
+      "case": "external_thin_pole_crossing_box",
+      "input_points": 9,
+      "removed_points": 7,
+      "remaining_points": 2
+    },
+    {
+      "case": "six_exact_faces",
+      "input_points": 6,
+      "removed_points": 6,
+      "remaining_points": 0
+    },
+    {
+      "case": "six_one_float32_step_outside",
+      "input_points": 6,
+      "removed_points": 0,
+      "remaining_points": 6
+    }
+  ],
+  "limitations": [
+    "No labels distinguish self from external objects",
+    "Removal fraction is not accuracy or false-positive reduction",
+    "Only near returns exported within 0.5 m; no full detector, PCL support or level replay",
+    "An external object inside a box is removed regardless of identity",
+    "Masked or occluded space has unknown occupancy, not free-space evidence",
+    "Sparse remnants can later fail the support filter; this audit does not measure that loss"
+  ]
+}
