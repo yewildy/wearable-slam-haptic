@@ -1,0 +1,89 @@
+第二步 距离到软件提醒强度
+2026年10月23日
+
+这一版做了什么
+在传感器局部坐标中，先复用第一步的review_self_mask.preview，再对保留的有效点做距离和邻域检查，计算0到1的软件提醒强度。没有马达、速度估计、Point-LIO地图依赖或自动自身识别。
+真实候选还未完成身份审核。因此目前默认不应用自身屏蔽。软件接口和合成审核测试已经接好，不代表桌上的真实支架已被识别。不要为了让提醒安静而把所有稳定候选直接接受。
+
+文件职责
+tools/distance_policy.py：主要功能代码。参数检查、复用局部过滤、SciPy邻域支持、最近候选、连续强度、等级迟滞、时间检查和断流判断。
+tools/distance_node.py：ROS1输入输出适配，订阅已有/livox/lidar，调用前面的计算模块。没有启动驱动或建图的命令。
+tools/replay_distance.py：只读已有完整bag，输出新目录中的逐帧CSV与摘要。不启动ROS master，不改包。
+tools/test_distance_policy.py：33项人工点及接口测试，不是现场精度实验。
+tools/review_self_mask.py：沿用第一步的程序，未修改。不是又写一套自身过滤。
+新Python脚本直接通过python3运行，不依赖加入CMake。原来的C++程序及launch均未替换。不要同时向同一新输出话题启动多个新节点。
+
+数据流程
+原始CustomMsg -> 有限非零检查 -> 经过审核且显式启用的体素排除 -> 保留近场不确定信息 -> 0.2至5米ROI -> 邻域支持 -> 最近受支持候选 -> 强度与状态。
+所有处理使用副本或布尔选择，原始消息和bag不改写。被自身遮挡或排除的空间仍未知，不是空地。
+距离是雷达原点到候选点的三维欧氏距离，不是身体表面间距。默认考虑所有可见方向，尚不区分胸前方向、身体朝向、地面或头部障碍；未标定安装倾角，不应称为穿戴危险分类器。
+SciPy cKDTree默认半径0.08m，要求至少3个其他点；计数先减掉查询点自己。不同回波即使坐标相同仍计作其他点，没有按物体或独立表面计数。稀疏细杆可能通不过，因此更近的未支持点不会被当作无障碍。
+SciPy官方接口说明：https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.query_ball_point.html
+
+强度规则
+距离>=2m：0
+距离=1.5m：0.25
+距离=1m：0.5
+距离=0.75m：0.75
+距离<=0.5m：1
+0.5至1m：0.5 + 0.5*(1-d)/(1-0.5)
+1至2m：0.5*(2-d)/(2-1)
+这是便于检查的初始分段线性规则，不是用实验拟合的最佳震动系数。
+连续strength是本帧目标值，尚未做连续值平滑。另有level=0/1/2/3离散等级：2/1/0.5m分界，增强立即发生；减弱需越过原等级边界0.1m且连续2个合格帧。等级因此可能暂时保持3，但本帧连续值已降为0.95，这是两个字段的不同含义。
+
+不能用0替代未知
+数据断流超过0.5s：STALE_OR_NO_DATA。
+错误坐标系：FRAME_MISMATCH，不做隐式TF转换。
+时间戳不递增：TIMESTAMP_NONINCREASING。源时钟整体重置后应查清原因并重启本节点，不能改时间戳伪装新数据。
+消息太旧或明显来自未来：STALE_OR_FUTURE_HEADER；计算后才变旧：STALE_AT_PUBLICATION。
+计算超过0.5s：PROCESSING_TOO_SLOW；wall-time线程在回调仍忙时也发布未知。
+剩余点中有0.2m以内的非零回波：NEAR_FIELD_UNCERTAIN。这个0.2m是沿用原型的工作范围下界，不是自身删除半径。
+有比受支持候选更近的未支持点：UNSUPPORTED_CLOSER_RETURN。保留candidate_distance_m和candidate_strength作诊断，但有效strength为空。
+没有剩余有效观测：NO_REMAINING_OBSERVATIONS，不把全删或空帧说成安全。
+只有5m以外有效点时可报告NO_NEAR_CANDIDATE、strength=0，distance为空。只表示本帧没发现范围内候选，并非盲区或遮挡空间都安全。
+这些异常报告valid=false，JSON中的strength/distance_m为null；单独Float32话题用NaN。不能把NaN、null或旧255等级直接作为PWM。
+
+在自己电脑看强度示例
+在下载的仓库根目录执行：
+python3 tools/distance_policy.py
+只需要NumPy，不需要ROS或SciPy。Windows可用本机Python解释器替换python3。
+
+运行纯测试
+python3 -m unittest discover -s tools -p test_distance_policy.py -v
+本机未装SciPy时用小数组NumPy参考算法，32通过、1跳过。Jetson实际使用SciPy，33项全部通过。参考算法禁止超过4000点，不是实时替代方案。没有为此安装或升级任何系统库。
+
+运行ROS节点
+先确认已有驱动确实在发布数据，不要因下列命令又开一个驱动或Point-LIO。
+source /opt/ros/noetic/setup.bash
+source ~/ws_livox/devel/setup.bash
+source ~/haptic_ws/devel/setup.bash
+python3 tools/distance_node.py _expected_frame:=livox_frame
+这里tools是下载仓库内的目录。Jetson独立副本的位置见本机路径说明。若自己的真实header.frame_id不是livox_frame，应检查实际传感器坐标系，不可把map改名冒充局部坐标。
+默认apply_self_mask=false。只有在已有真实审核配置时，才在上述节点命令后附加：
+_reviewed_profile:=/实际路径/reviewed_profile.json _apply_self_mask:=true
+不能传candidate_review.json，不能传旧C++的self_boxes配置。配置本身仍须保持self_mask_enabled=false，它是第一步生成的离线审查资料；本次运行的独立apply开关才决定是否应用。
+这里的“reviewer_declaration_only”只表示存在审核声明，不表示软件已证明是身体。
+
+观察输出
+rostopic echo /haptic/distance_v2/report
+rostopic echo /haptic/distance_v2/strength
+rostopic echo /haptic/distance_v2/distance
+rostopic echo /haptic/distance_v2/state
+优先读取report，同一JSON包含同一计算结果的状态、强度、计数及输入stamp。分开发的话题可能异步到达，不能假定读到的几个最新值必属同一帧。这里不是旧/haptic/proximity话题，没有改原程序输出。
+Ctrl+C结束节点；不会停止别人已经启动的驱动或建图。
+
+离线读取自己的bag
+python3 tools/replay_distance.py /实际目录/记录.bag --frame livox_frame --output /新的结果目录
+输入完整bag，不能拿只有0.5m近点的near_returns.npz来声称评估周围环境。
+输出目录不得已存在。失败时可能保留未完成CSV，只有成功结束并生成summary.json后才作为完整结果。程序前后核对原bag指纹。
+输入仅接受livox_ros_driver2/CustomMsg，不自动转换driver1消息。frame必须匹配。离线将age设0按记录顺序计算，不把这个结果说成测得实时延迟，也不模拟播放速度或记录间的wall-time断流。
+离线如确实有审核配置，可加--reviewed-profile /实际文件.json --apply-self-mask。
+实时节点若接旧bag播放，需正确配置ROS模拟时钟并用rosbag play --clock，否则旧header会被拒绝。这次没有启动新的bag现场播放或改全局/use_sim_time。
+
+本次验证与剩余工作
+Jetson的33项计算测试通过；16项隔离ROS合成检查通过，包括强度0.25/1/0.5、合成审核排除1点、错误坐标系、点数不符、旧/未来时间戳、重复时间戳、断流和慢回调。合成审核只用人工点，不是实际身体标注。临时节点和独立master已停止。
+保存的291帧完整记录，在不启用未审查屏蔽时，291帧均NEAR_FIELD_UNCERTAIN，没有输出有效最终强度。这是保留近身回波的不确定性，不是距离方案的实物准确率。逐帧CSV留在本机，不公开场景数据。
+该离线计算平均约62.10ms/帧，包含Python消息转数组和计算，不含现场传感器接收/显示/马达，不是端到端延迟或持续实时性能承诺。
+补测发现发布前年龄检查会覆盖既有拒绝原因，已改为只复查原本有效的结果；慢回调测试进程的PYTHONPATH曾覆盖ROS路径，已修正测试环境并重测。失败记录保留在内部工作目录。
+第二步的软件第一版和ROS接口已经存在，但真实自身区域仍需核对；尚无已知实测距离、受控细杆/外物、穿戴晃动、地面误报和长时动态测试。不得说完整穿戴提醒目标已全部验证。
+未实现速度、目标关联、停留衰减、身体前方ROI、地面识别、马达。未来在用户指挥下逐项进行，不自动更改现场默认配置。

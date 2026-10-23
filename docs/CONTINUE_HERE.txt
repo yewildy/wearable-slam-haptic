@@ -1,3 +1,9 @@
+2026-10-23 用户已授权开始第二步
+新增Python距离策略、ROS适配和只读完整bag离线计算，详见docs/SECOND_STAGE_DISTANCE.txt。
+核心tools/distance_policy.py；tools/distance_node.py；tools/replay_distance.py；tools/test_distance_policy.py，复用原tools/review_self_mask.py未修改。
+Jetson33项纯测试、16项隔离ROS合成检查通过；Windows32通过1跳过SciPy对照；旧31项回归通过。保存291帧基线均近场不确定，不能说真实自身识别或有效强度已实测。
+真实自身配置仍未审核，默认apply_self_mask=false。未接速度、地面/前方ROI或马达，没有动现场默认设置。测试进程和master已停止。保持用户逐步指挥和automation暂停。
+
 2026-10-23 先读懂第一版代码
 用户当前只要求详细伪代码手册，不推进功能或实时测试。
 阅读docs/FIRST_STAGE_PSEUDOCODE_20261023.docx或txt，共23页，覆盖三个Python文件全部函数和教学例子。

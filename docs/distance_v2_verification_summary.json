@@ -1,0 +1,17 @@
+{
+  "compute_tests_jetson": 33,
+  "compute_tests_windows_passed": 32,
+  "compute_tests_windows_skipped": 1,
+  "first_stage_regression_passed": 31,
+  "synthetic_ros_checks": 16,
+  "saved_frames": 291,
+  "saved_states": {
+    "NEAR_FIELD_UNCERTAIN": 291
+  },
+  "saved_effective_strength_frames": 0,
+  "saved_mean_compute_ms": 62.09953934637529,
+  "physical_self_identity_verified": false,
+  "live_collection_started": false,
+  "motor_control": false,
+  "system_libraries_changed": false
+}
