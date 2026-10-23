@@ -1,0 +1,28 @@
+{
+  "sample": "previous_saved_near_points",
+  "mature_frames": 60,
+  "remaining_points": 1114,
+  "eligible_but_not_removed": 0,
+  "nearest_residual_bucket_hits": {
+    "9": 6,
+    "12": 2,
+    "14": 8,
+    "1": 5,
+    "2": 2,
+    "4": 7,
+    "10": 3,
+    "0": 4,
+    "15": 6,
+    "6": 5,
+    "3": 4,
+    "8": 3,
+    "11": 2,
+    "5": 3
+  },
+  "conclusion": "No eligible stable-cell omission reproduced; device stationarity is not all-return persistence",
+  "production_algorithm_changed": false,
+  "device_unit_tests": 83,
+  "local_pass": 82,
+  "local_skip": 1,
+  "focused_tests": 5
+}

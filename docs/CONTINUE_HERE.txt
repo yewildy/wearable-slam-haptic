@@ -1,3 +1,23 @@
+2026-10-23 Stationary-contract check, no production algorithm change
+Five focused tests pass on the device: fixed 200 near points removed after 10 s;
+fixed near points plus 0.8 m target yield 0.8 m; no outside observations yield
+unknown, not a fabricated far distance; a new 0.1 m return alerts even when the
+sensor is stationary; intermittent sparse hits are not automatically stable.
+All device unit tests: 83 pass. Local: 82 pass and one SciPy-only test skipped.
+Seven running source files were unchanged; no live process was restarted.
+
+Prior saved near sample: 60 mature frames, 1114 residual points, zero residual
+points that should have matched the eligible stable voxel geometry/tolerance.
+The nearest residual cell hit 0..15 of the 20 temporal buckets, below the 16
+bucket threshold. This validates the implemented rule, NOT physical self identity
+or the suitability of its stability parameters. No independent movement trial.
+
+Sensor stationarity alone cannot guarantee all current returns are persistent.
+Do not replace stable-only suppression with a blanket 0.5 m exclusion merely to
+make the display show a larger distance. Real near residuals remain unresolved.
+The pending sparse-point/neighbor-support user choice remains unanswered.
+
+Previous current handoff:
 2026-10-23 Current rolling prototype and pending sparse-point decision
 
 Confirmed requirement: 0.50 m radius, past 10 s rolling history; suppress only
