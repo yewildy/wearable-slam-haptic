@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--viewer-only', action='store_true')
     parser.add_argument('--reviewed-profile', type=Path)
     parser.add_argument('--apply-self-mask', action='store_true')
+    parser.add_argument('--rolling-near-experiment', action='store_true')
     args = parser.parse_args()
     root = Path(__file__).resolve().parent
     if args.demo:
@@ -59,6 +60,14 @@ def main():
     if current and (args.reviewed_profile or args.apply_self_mask):
         print('A distance node already exists. Close it yourself before changing its mask settings.',file=sys.stderr)
         return 2
+    if current and args.rolling_near_experiment:
+        try:
+            rolling_matches = master.getParam(current[0]+'/rolling_near_experiment') is True
+        except Exception:
+            rolling_matches = False
+        if not rolling_matches:
+            print('Existing distance node is not in rolling mode; no process was stopped.',file=sys.stderr)
+            return 2
     node = viewer = None
     try:
         if not current and not args.viewer_only:
@@ -68,6 +77,8 @@ def main():
                 command.append('_reviewed_profile:='+str(args.reviewed_profile.resolve()))
             if args.apply_self_mask:
                 command.append('_apply_self_mask:=true')
+            if args.rolling_near_experiment:
+                command.append('_rolling_near_experiment:=true')
             node=subprocess.Popen(command)
         viewer=subprocess.Popen([sys.executable,str(root/'strength_display.py')])
         return viewer.wait()

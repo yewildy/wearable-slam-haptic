@@ -61,7 +61,7 @@ class StrengthWindow(QtWidgets.QWidget):
         layout.addWidget(self.mask)
         grid = QtWidgets.QGridLayout()
         self.diagnostics = {}
-        for i, name in enumerate(('近场未确认点', '自身排除点', '邻域支持点', '输入点数')):
+        for i, name in enumerate(('剩余近场点', '滚动排除点（本帧）', '邻域支持点', '输入点数')):
             grid.addWidget(QtWidgets.QLabel(name), i//2, 2*(i%2))
             label = QtWidgets.QLabel('—')
             label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -116,10 +116,12 @@ class StrengthWindow(QtWidgets.QWidget):
                               'QProgressBar::chunk { background: '+color+'; border-radius: 3px; }')
         if r.get('mask_state_known', True):
             self.mask.setText('自身过滤：已应用审核配置（审核声明）' if r['self_mask_enabled'] else '自身过滤：未启用')
+            if 'rolling_removed_points' in r:
+                self.mask.setText('滚动10秒 / 50 cm · %s · 原型测试，屏蔽区不代表安全' % ('已就绪' if r.get('rolling_ready') else '统计中'))
         else:
             self.mask.setText('自身过滤状态：暂无新数据')
         self.mask.setStyleSheet('color: #795313;' if r.get('self_mask_enabled') else 'color: #606970;')
-        keys = ('near_untrusted_points', 'self_removed_points', 'supported_points', 'input_points')
+        keys = ('near_untrusted_points', 'rolling_removed_points', 'supported_points', 'original_input_points')
         stale = state in ('DISPLAY_STALE', 'INVALID_REPORT', 'WAITING_FOR_REPORT')
         for label, key in zip(self.diagnostics.values(), keys):
             label.setText(str(r.get(key)) if not stale and r.get(key) is not None else '—')
@@ -127,6 +129,8 @@ class StrengthWindow(QtWidgets.QWidget):
         raw = r.get('raw_nearest_m')
         parts = ['距离候选（仅诊断）：'+('%.3f m' % candidate if candidate is not None else '—'),
                  '剩余最近回波：'+('%.3f m' % raw if raw is not None else '—')]
+        if not stale and r.get('candidate_strength') is not None:
+            parts.append('候选强度（非控制值）：%d%%' % round(100*r['candidate_strength']))
         self.detail.setText('    '.join(parts))
         self.age.setText('报告 %.1f s 前' % r['age'] if r.get('age') is not None else '等待报告')
 

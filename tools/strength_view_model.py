@@ -5,6 +5,9 @@ import threading
 import time
 
 REASONS = {
+    'ROLLING_WARMUP': '滚动近点统计中（约10秒）',
+    'ROLLING_FILTER_UNVERIFIED': '滚动过滤实验：排除区域身份未确认',
+    'NEAR_FIELD_ALERT': '剩余近场回波：保守强提醒，距离仅供参考',
     'WAITING_FOR_REPORT': '等待提醒程序的数据',
     'DISPLAY_STALE': '提醒程序断流',
     'INVALID_REPORT': '收到的提醒数据格式有误',
@@ -44,7 +47,7 @@ def checked_report(text):
         raise ValueError('Missing mask state')
     strength, distance = report.get('strength'), report.get('distance_m')
     if report['valid']:
-        if state not in ('DISTANCE_CANDIDATE', 'NO_NEAR_CANDIDATE'):
+        if state not in ('DISTANCE_CANDIDATE', 'NO_NEAR_CANDIDATE', 'NEAR_FIELD_ALERT'):
             raise ValueError('Unexpected valid state')
         if not number(strength) or not 0 <= strength <= 1:
             raise ValueError('Invalid strength')
@@ -55,11 +58,13 @@ def checked_report(text):
             raise ValueError('Invalid distance')
     elif strength is not None or distance is not None:
         raise ValueError('Unknown result must not contain an effective strength or distance')
-    for name in ('candidate_distance_m', 'raw_nearest_m', 'processing_ms'):
+    for name in ('candidate_distance_m', 'raw_nearest_m', 'processing_ms', 'candidate_strength'):
         value = report.get(name)
         if value is not None and (not number(value) or not 0 <= value <= 1000000):
             raise ValueError('Invalid diagnostic value')
-    for name in ('input_points', 'self_removed_points', 'near_untrusted_points', 'supported_points'):
+        if name == 'candidate_strength' and value is not None and value > 1:
+            raise ValueError('Invalid candidate strength')
+    for name in ('input_points', 'self_removed_points', 'near_untrusted_points', 'supported_points', 'rolling_removed_points'):
         value = report.get(name)
         if value is not None and (type(value) is not int or not 0 <= value <= 1000000000):
             raise ValueError('Invalid count')
@@ -92,5 +97,6 @@ class ViewModel:
             result['age'] = max(0., now-self.received)
         if now-self.received > self.timeout or now < self.received:
             result.update(valid=False, state='DISPLAY_STALE', strength=None, distance_m=None,
-                          candidate_distance_m=None, raw_nearest_m=None, mask_state_known=False)
+                          candidate_distance_m=None, candidate_strength=None, raw_nearest_m=None,
+                          mask_state_known=False, rolling_removed_points=None)
         return result
