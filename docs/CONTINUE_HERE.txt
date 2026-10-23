@@ -1,3 +1,15 @@
+2026-10-23 新采样候选排除验证
+用户明确要求雷达在线时测试，已完成一次30秒采样与离线验证；无需重复采集。
+结论详见docs/EXCLUSION_CHECK_20261023.txt及exclusion_verification_summary.json。
+291帧，前101帧提取180候选；后190帧模拟接受候选的测试配置排除146816点，保留2227822有效点，区域外删除0。
+默认未确认排除0；全291帧过滤结果与独立几何预期一致；格内/格外人工控制12/12均符合。
+调用真实Python过滤函数，但接受声明只是内存测试夹具，不是实际人工审核，不保存为正式配置。
+原包/候选/核心/default/驱动/两个Python功能文件未变，临时record/driver/master已停，无建图/相机/马达。
+新增tools/verify_candidate_exclusion.py只读已有bag，ROS环境下运行；不负责启动传感器。
+此结果仅验证局部区域排除执行，不能说自身身份已确认、真实误报漏报已测或第一步现场完成。
+后续仍缺实际区域审核、实时接入和外物对照。保持用户逐步指挥、Python优先及automation暂停。
+原包、近点、实际候选、逐帧报告与场景图不公开。
+
 2026-10-23 第一阶段续做
 先读docs/IMPLEMENTATION_GUIDE_20261023.txt第十一部分。第一步是排除使用者/支架/固定线缆的自身回波。
 新增tools/review_self_mask.py、self_review_template.html、test_review_self_mask.py。

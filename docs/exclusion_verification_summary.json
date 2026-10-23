@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "analysis_kind": "candidate_exclusion_software_fixture",
+  "candidate_voxels": 180,
+  "sample_header_span_seconds": 29.000338315963745,
+  "initialization": {
+    "frames": 101,
+    "input_points": 2020032,
+    "valid_points": 1262237,
+    "invalid_points": 757795,
+    "test_fixture_removed": 78243,
+    "kept_valid": 1183994,
+    "frames_with_exclusion": 101,
+    "unreviewed_removed": 0,
+    "outside_candidate_removed": 0
+  },
+  "later_same_recording": {
+    "frames": 190,
+    "input_points": 3799968,
+    "valid_points": 2374638,
+    "invalid_points": 1425330,
+    "test_fixture_removed": 146816,
+    "kept_valid": 2227822,
+    "frames_with_exclusion": 190,
+    "unreviewed_removed": 0,
+    "outside_candidate_removed": 0
+  },
+  "all_frames": {
+    "frames": 291,
+    "input_points": 5820000,
+    "valid_points": 3636875,
+    "invalid_points": 2183125,
+    "test_fixture_removed": 225059,
+    "kept_valid": 3411816,
+    "frames_with_exclusion": 291,
+    "unreviewed_removed": 0,
+    "outside_candidate_removed": 0
+  },
+  "synthetic_controls": {
+    "inside_selected_cells_removed": 12,
+    "outside_selected_cells_retained": 12
+  },
+  "actual_filter_function_exercised": true,
+  "original_bag_unchanged": true,
+  "candidate_unchanged": true,
+  "live_default_changed": false,
+  "test_fixture_saved_as_profile": false,
+  "physical_self_identity_verified": false,
+  "real_external_object_ground_truth_available": false,
+  "elapsed_offline_verification_seconds": 38.9502432050067,
+  "limitations": [
+    "Mock accepted regions only; actual candidates remain unreviewed.",
+    "Later frames are from the same recording, not an independent scene.",
+    "An external object in a selected cell would also be excluded.",
+    "No realtime pipeline, wearer, accuracy, false-negative or latency validation."
+  ],
+  "temporary_master_stopped": true,
+  "guarded_configuration_unchanged": true
+}
