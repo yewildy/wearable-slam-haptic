@@ -1,7 +1,7 @@
 {
-  "unit_tests_device": 55,
+  "unit_tests_device": 56,
   "new_model_tests": 17,
-  "new_launcher_tests": 5,
+  "new_launcher_tests": 6,
   "unchanged_policy_tests": 33,
   "qt_layout_cases": 12,
   "ros_to_qt_synthetic_cases": 5,
@@ -10,5 +10,7 @@
   "live_capture_started": false,
   "motor_control": false,
   "algorithm_changed": false,
-  "system_packages_installed": false
+  "system_packages_installed": false,
+  "stable_shell_entry_help_checked": true,
+  "shell_uses_lf": true
 }
