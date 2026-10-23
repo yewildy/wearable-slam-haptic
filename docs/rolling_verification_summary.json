@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-23",
+  "device_unit_tests": 78,
+  "local_pass": 77,
+  "local_skip": 1,
+  "final_live_reports": 198,
+  "final_live_states": {
+    "ROLLING_WARMUP": 88,
+    "NEAR_FIELD_ALERT": 105,
+    "DISTANCE_CANDIDATE": 1,
+    "UNSUPPORTED_CLOSER_RETURN": 4
+  },
+  "max_removed": 1425,
+  "remaining_near_points_last": 2,
+  "no_ready_regression": "R3 verified; R4 restart observation includes initial warmup",
+  "synthetic_ros_cases": 5,
+  "physical_movement_verified": false,
+  "requirement_clarification_pending": false,
+  "sparse_point_policy_choice_pending": true
+}

@@ -1,0 +1,48 @@
+2026-10-23 Current rolling prototype and pending sparse-point decision
+
+Confirmed requirement: 0.50 m radius, past 10 s rolling history; suppress only
+locally stable near regions. New targets alert immediately in stage two.
+Motion continuity and speed are deferred to stage three. The earlier questions
+about blanket radius exclusion are resolved: do not suppress all near points.
+
+Current rolling implementation: 2 cm sensor-local voxels, 0.5 s hit buckets,
+16 of 20 buckets and at least 2 of 4 buckets in each 2 s segment; matching has
+1 cm tolerance outside a stable voxel surface, still clipped at radius 0.50 m.
+These are tested prototype parameters, not a demonstrated body classifier.
+Stable external objects and new objects inside the local tolerance can be hidden.
+Masked space remains unknown, never known free. Counts are per frame.
+
+Run in an existing ROS1/Livox environment with the existing driver already on:
+python3 tools/start_strength_display.py --rolling-near-experiment
+On the research device the existing home shell entry now selects this mode.
+Do not run another driver or change Point-LIO, Livox, networking or system libs.
+Close an old haptic session and wait for its report publisher to exit before
+restarting; a window alone does not prove a calculation node is alive.
+
+Files: rolling_near.py, rolling_distance.py, distance_node.py,
+strength_view_model.py, strength_display.py, start_strength_display.py.
+The original distance_policy.py remains unchanged. No motor or speed estimate.
+78 device unit tests pass. Local: 77 pass, one SciPy-only skip.
+Five synthetic ROS cases pass: near suppression with 1.5 m / 25%, new 0.3 m
+target / 100%, target removed / 25%, stream loss / unknown, restart / warmup.
+These tests do not prove physical wearable movement or thin-object detection.
+
+Latest real 30 s: 198 reports; warmup 88, near-field alert 105, distance candidate
+1, unsupported closer return 4. Maximum per-frame removed count 1425. The last
+frame still had 2 unmatched near points, roughly 0.102 m: the issue is NOT fully
+resolved. No hidden dropping of these points has been added.
+Same-scene saved comparison (60 mature frames) with 1 cm tolerance: median
+nearest residual 0.1014 -> 0.1254 m; last under-20cm points 19 -> 4; only 5 frames
+had no such residual. This is parameter fitting, not independent accuracy.
+
+PENDING USER CHOICE: treat sparse 1-2 near returns using neighbor support, with
+the risk of missing thin objects, or continue conservative alerts for any near
+return. Do not implement silent noise deletion before that choice is answered.
+Tag audit found normal as well as lower-confidence returns; no tag filter changed.
+Official tag definition consulted:
+https://github.com/Livox-SDK/livox_wiki_en/blob/master/source/tutorials/new_product/mid360/livox_eth_protocol_mid360.md
+
+No raw samples, scene masks, private connection scripts or internal logs published.
+Automation remains paused. Continue first-person Word diary and reviewed GitHub
+counterpart after the next authorized step. Do not claim this is completed safe
+obstacle avoidance. Physical movement and known-distance target tests remain open.
