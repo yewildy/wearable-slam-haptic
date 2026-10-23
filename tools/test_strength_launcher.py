@@ -1,6 +1,7 @@
 import sys
 import types
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 import start_strength_display as launch
 
@@ -13,6 +14,10 @@ class FakeProcess:
 
 
 class LauncherTests(unittest.TestCase):
+    def test_shell_script_uses_unix_newlines(self):
+        data=Path(__file__).with_name('start_strength_display.sh').read_bytes()
+        self.assertNotIn(b'\r',data)
+
     def exercise(self, publishers, argv=(), failed=False):
         master=types.SimpleNamespace(getPid=lambda:1,getSystemState=lambda:([['/haptic/distance_v2/report',publishers]],[],[]),
                                      getTopicTypes=lambda:[['/haptic/distance_v2/report','std_msgs/String']])
