@@ -1,0 +1,36 @@
+2026年10月24日 定期离线排查与过滤后孤点的复现
+
+离开前，我决定关闭雷达、让Jetson继续开机，把排错和代码简化分批进行。已有定时任务已改成每6小时继续同一个对话，本次运行是第一次实际触发。我把第三版静止十秒后还显示50 cm以内点的问题放在第一位，之后再处理边界、重复代码、注释和启动流程。运行还需要本机电脑与应用保持可用，并受账号用量限制；不能只因为设了定时就保证每次都成功。
+
+这次我读取此前保存的160帧近点，时长15.90秒。文件只有50 cm内的点，没有远处点云或同步位姿，因此不能从它恢复真实完整环境。我用同一输入对照R4和第三版：60个成熟帧中，R4有55帧近场强提醒；第三版无位姿模式有4帧近场强提醒、32帧近距离候选、24帧没有剩余观测。两版滚动删除总数相同，第三版另外删除946个孤立点，轨迹保护恢复点数为0。这说明这段样本的残留不能归咎于轨迹保护把点加回来。
+
+为了单独检查其他环节，我又加了明确标注的合成0.8 m目标和单位位姿。无位姿时仍有36个成熟帧显示近距离；加入合成单位位姿后降为13帧，其中背景延续又排除335点。单位位姿只是控制变量，不能当作当时真实的位姿。固定近点加远处目标的合成对照最终显示0.8 m；从远处接近并在0.3 m停下的目标，则被第三步的轨迹保护继续保留。后一项是现有规则有意产生的效果，与所有静止近物都必须消失的要求存在区别。
+
+我进一步构造了一个具体反例：中心点在0.1 m，周围有三个点。过滤前中心有足够邻居，外围三个点各自支持不足，被删掉后只剩中心一个点。当前第三版仍输出0.1 m和100%近场提醒，但附近没有形成有效轨迹。这确认了去噪前有支持与去噪后仍成团之间存在漏洞，违背了我选择的按成团目标提醒。复现程序为reproduce_support_orphan.py，设备实际运行已得到这一结果。
+
+本轮只完成定位和可复现反例，没有修改运行算法，也没有启动真实驱动、建图、相机、马达或重新采集。原样本核对未变。下一批先修复过滤后孤点仍进入距离计算的问题，并检查会不会再次造成大点云计算超时；之后再用同一近点样本复算。这个反例解释了一种会出现0.1 m误提醒的路径，但尚不能证明它覆盖了现场全部残留，也不能把离线结果说成身体身份或穿戴安全验证。
+
+2026-10-24 Recurring offline audit batch 1
+The user authorized continuing this project every six hours, with LiDAR off.
+This supersedes earlier completed/paused notices. Each run handles one small verified batch.
+
+FIRST NEXT TASK: fix the confirmed post-filter singleton bug in motion_support/pipeline.
+tools/reproduce_support_orphan.py demonstrates the current failure on Jetson:
+four near points -> three removed -> one near survivor, no nearby track,
+yet distance=0.1m and strength=100%. This violates the grouped-target requirement.
+The script deliberately asserts that the old bug reproduces; update its contract into
+a proper regression when fixing. No production algorithm was modified in this batch.
+Avoid recursive whole-cloud erosion that previously timed out. Use bounded group
+support or another tested approach, preserving new grouped near-object warnings.
+
+Read docs/near_pipeline_audit_summary.json for paired saved-near-crop results.
+The sample is 160 frames / 15.90s, near-only, no saved pose or far-field truth.
+R4 and v3 remove the same 80689 rolling points over 60 mature frames; v3 removes
+946 additional isolated points, no track protection restoration in the no-pose run.
+Added far targets and identity poses are synthetic controls, not reconstructed truth.
+Do not claim the singleton explains all real residuals.
+
+Then audit tracked-target protection, timing/input handling, and simplify code/entrypoints.
+Keep each batch small; retain original samples and previous failure evidence.
+No live driver/mapping/camera/motor; device operations only isolated haptic tests.
+Continue the same first-person diary and screened GitHub snapshots after meaningful work.

@@ -1,0 +1,155 @@
+{
+  "sample_frames": 160,
+  "duration_s": 15.899388074874878,
+  "sample_max_range_m": 0.49999801022503243,
+  "sample_has_pose": false,
+  "sample_has_far_field": false,
+  "input_unchanged": true,
+  "variants": {
+    "r4_near_crop": {
+      "frames": 160,
+      "mature_frames": 60,
+      "mature_states": {
+        "NEAR_FIELD_ALERT": 55,
+        "UNSUPPORTED_CLOSER_RETURN": 5
+      },
+      "valid_near_frames": 55,
+      "stage_totals": {
+        "rolling_raw_removed_points": 0,
+        "rolling_removed_points": 80689,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 0,
+        "isolated_removed_points": 0,
+        "near_untrusted_points": 148
+      },
+      "last": {
+        "state": "NEAR_FIELD_ALERT",
+        "distance_m": 0.16697604782081577,
+        "strength": 1.0,
+        "rolling_raw_removed_points": null,
+        "rolling_removed_points": 1396,
+        "rolling_protected_track_points": null,
+        "rolling_continuity_removed_points": null,
+        "isolated_removed_points": null,
+        "near_untrusted_points": 4
+      }
+    },
+    "v3_near_crop_no_pose": {
+      "frames": 160,
+      "mature_frames": 60,
+      "mature_states": {
+        "DISTANCE_CANDIDATE": 32,
+        "NO_REMAINING_OBSERVATIONS": 24,
+        "NEAR_FIELD_ALERT": 4
+      },
+      "valid_near_frames": 36,
+      "stage_totals": {
+        "rolling_raw_removed_points": 80689,
+        "rolling_removed_points": 80689,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 0,
+        "isolated_removed_points": 946,
+        "near_untrusted_points": 8
+      },
+      "last": {
+        "state": "NO_REMAINING_OBSERVATIONS",
+        "distance_m": null,
+        "strength": null,
+        "rolling_raw_removed_points": 1396,
+        "rolling_removed_points": 1396,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 0,
+        "isolated_removed_points": 16,
+        "near_untrusted_points": 0
+      }
+    },
+    "v3_crop_plus_synthetic_far_no_pose": {
+      "frames": 160,
+      "mature_frames": 60,
+      "mature_states": {
+        "DISTANCE_CANDIDATE": 56,
+        "NEAR_FIELD_ALERT": 4
+      },
+      "valid_near_frames": 36,
+      "stage_totals": {
+        "rolling_raw_removed_points": 80689,
+        "rolling_removed_points": 80689,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 0,
+        "isolated_removed_points": 946,
+        "near_untrusted_points": 8
+      },
+      "last": {
+        "state": "DISTANCE_CANDIDATE",
+        "distance_m": 0.8,
+        "strength": 0.7,
+        "rolling_raw_removed_points": 1396,
+        "rolling_removed_points": 1396,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 0,
+        "isolated_removed_points": 16,
+        "near_untrusted_points": 0
+      }
+    },
+    "v3_crop_plus_synthetic_far_identity_pose": {
+      "frames": 160,
+      "mature_frames": 60,
+      "mature_states": {
+        "DISTANCE_CANDIDATE": 59,
+        "NEAR_FIELD_ALERT": 1
+      },
+      "valid_near_frames": 13,
+      "stage_totals": {
+        "rolling_raw_removed_points": 80689,
+        "rolling_removed_points": 81024,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 335,
+        "isolated_removed_points": 730,
+        "near_untrusted_points": 2
+      },
+      "last": {
+        "state": "DISTANCE_CANDIDATE",
+        "distance_m": 0.8,
+        "strength": 0.3460695228101417,
+        "rolling_raw_removed_points": 1396,
+        "rolling_removed_points": 1402,
+        "rolling_protected_track_points": 0,
+        "rolling_continuity_removed_points": 6,
+        "isolated_removed_points": 10,
+        "near_untrusted_points": 0
+      }
+    }
+  },
+  "synthetic_controls": {
+    "fixed_near_plus_far": {
+      "state": "DISTANCE_CANDIDATE",
+      "distance_m": 0.8,
+      "strength": 0.28000494318564245,
+      "rolling_raw_removed_points": 4,
+      "rolling_removed_points": 4,
+      "rolling_protected_track_points": 0
+    },
+    "approached_then_stopped": {
+      "state": "DISTANCE_CANDIDATE",
+      "distance_m": 0.3,
+      "strength": 0.6,
+      "rolling_raw_removed_points": 8,
+      "rolling_removed_points": 4,
+      "rolling_protected_track_points": 4
+    }
+  },
+  "production_code_changed": false,
+  "confirmed_counterexample": {
+    "kind": "synthetic_counterexample_not_physical_identity",
+    "star_input_points": 4,
+    "isolated_removed_points": 3,
+    "surviving_near_points": 1,
+    "state": "NEAR_FIELD_ALERT",
+    "distance_m": 0.1,
+    "strength": 1.0,
+    "nearby_tracks": [],
+    "violates_grouped_target_requirement": true,
+    "production_code_changed": false
+  },
+  "r4_raw_removed_diagnostic": "field_absent_in_r4; use rolling_removed_points for comparison"
+}

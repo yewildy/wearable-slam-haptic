@@ -1,13 +1,24 @@
-2026-10-23 Stage three software prototype
-User explicitly accepted radius-neighbor isolated-return removal and thin-object miss risk.
-Independent entry: bash ~/eno/sh/start_haptic_motion.sh (append --demo for synthetic only).
-Old R4 entry remains unchanged. New code is in tools/motion_*.py and tools/start_motion.*.
-Single-pass radius support, not recursive k-core; 8 cm and 3 other returns.
-136 device unit tests pass, 11 isolated synthetic ROS cases pass, 12 UI layouts pass.
-Final bounded stationary live observation: 133 reports; 83 warmup, 46 distance candidate,
-3 near-field alerts, one no-data. No final processing timeout. Prior performance failures
-were retained privately. Existing mapping/driver/R4 processes and protected files unchanged.
-Software prototype only: no motor, no physical walking accuracy or safety validation.
-Read MOTION_V3_20261023.txt, then motion_pipeline.py and test_motion_*.py.
-Do not resume the paused automation or invent parameter calibration.
-Diary updated locally and public snapshot prepared; publication requires blob verification.
+2026-10-24 Recurring offline audit batch 1
+The user authorized continuing this project every six hours, with LiDAR off.
+This supersedes earlier completed/paused notices. Each run handles one small verified batch.
+
+FIRST NEXT TASK: fix the confirmed post-filter singleton bug in motion_support/pipeline.
+tools/reproduce_support_orphan.py demonstrates the current failure on Jetson:
+four near points -> three removed -> one near survivor, no nearby track,
+yet distance=0.1m and strength=100%. This violates the grouped-target requirement.
+The script deliberately asserts that the old bug reproduces; update its contract into
+a proper regression when fixing. No production algorithm was modified in this batch.
+Avoid recursive whole-cloud erosion that previously timed out. Use bounded group
+support or another tested approach, preserving new grouped near-object warnings.
+
+Read docs/near_pipeline_audit_summary.json for paired saved-near-crop results.
+The sample is 160 frames / 15.90s, near-only, no saved pose or far-field truth.
+R4 and v3 remove the same 80689 rolling points over 60 mature frames; v3 removes
+946 additional isolated points, no track protection restoration in the no-pose run.
+Added far targets and identity poses are synthetic controls, not reconstructed truth.
+Do not claim the singleton explains all real residuals.
+
+Then audit tracked-target protection, timing/input handling, and simplify code/entrypoints.
+Keep each batch small; retain original samples and previous failure evidence.
+No live driver/mapping/camera/motor; device operations only isolated haptic tests.
+Continue the same first-person diary and screened GitHub snapshots after meaningful work.
