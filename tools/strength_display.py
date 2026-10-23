@@ -126,7 +126,7 @@ class StrengthWindow(QtWidgets.QWidget):
         candidate = r.get('candidate_distance_m')
         raw = r.get('raw_nearest_m')
         parts = ['距离候选（仅诊断）：'+('%.3f m' % candidate if candidate is not None else '—'),
-                 '原始最近回波：'+('%.3f m' % raw if raw is not None else '—')]
+                 '剩余最近回波：'+('%.3f m' % raw if raw is not None else '—')]
         self.detail.setText('    '.join(parts))
         self.age.setText('报告 %.1f s 前' % r['age'] if r.get('age') is not None else '等待报告')
 
