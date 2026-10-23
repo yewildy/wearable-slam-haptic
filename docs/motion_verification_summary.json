@@ -1,0 +1,13 @@
+{
+  "device_unit_tests": 136,
+  "synthetic_ros_cases": 11,
+  "ui_layout_cases": 12,
+  "live_states": {
+    "STALE_OR_NO_DATA": 1,
+    "ROLLING_WARMUP": 83,
+    "DISTANCE_CANDIDATE": 46,
+    "NEAR_FIELD_ALERT": 3
+  },
+  "physical_dynamic_validation": false,
+  "motor_control": false
+}
