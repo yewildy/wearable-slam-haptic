@@ -1,0 +1,129 @@
+障碍感知与震动提醒开发框架及模型交接
+更新日期 2026年10月23日
+
+一 先读结论
+目标是胸前佩戴一个MID-360，排除经过确认的使用者和装置自身回波，再按外部目标距离输出提醒。先实现距离方案，后研究接近速度与时间，震动硬件最后接入。
+目前不是完整产品。已有C++距离等级原型、可配置局部盒屏蔽、离线分析和回归工具。本轮新增Python初始化候选统计，仍不能自动确认某个点属于使用者。
+用户更熟悉Python：今后新增业务逻辑优先Python；已有PCL/C++保留作比较基线和可选计算模块。不能因为有C++就要求用户全部用C++，也不为统一语言重写整套程序。
+用户逐步指挥开发。雷达通电仅表示需要时可用，不代表每次都要录包、启动驱动或展开新实验。夜间自动化已暂停，不恢复。
+
+二 三步目标与当前完成程度
+第一步 自身排除：已有局部几何盒的执行机制，现场默认关闭；新增初始化稳定体素候选的Python离线版。缺少候选可视化审核、真实自身身份核对、审核配置与运行过滤接口。不能说第一步已完成。
+第二步 距离提醒：已有0.5/1/2米对应强中弱、释放迟滞、无数据UNKNOWN。尚无连续强度曲线，尚无胸前前方区域、地面处理或经过确认的身体排除，未接马达。
+第三步 速度与时间：尚未实现目标关联、自身运动补偿、接近速度、碰撞时间或停留衰减。不能直接对相邻帧最近点距离做差并称作某个物体的速度。
+
+三 数据应该怎样走
+当前：MID-360 -> /livox/lidar (livox_ros_driver2/CustomMsg) -> C++有限坐标与非零检查 -> 可选局部盒 -> 0.2至5米范围 -> PCL邻域支持 -> 最近受支持点 -> 距离等级/状态/诊断。
+新增离线：已有原始bag -> capture_near_cloud.py导出near_returns.npz -> initialization_candidates.py统计前10秒稳定近点 -> candidate_review.json和candidate_voxels.csv -> 人工/点云审核。箭头到此为止，尚未连接到实时屏蔽。
+规划：Python初始化/审核工具生成小范围已审查配置；经隔离回放检查后，由过滤模块使用；Python提醒策略再输出强度和有效性。业务逻辑与ROS收发拆开，纯函数可在Windows上测试。
+将来可建立Python ROS节点接收原始CustomMsg，用NumPy作坐标/体素运算；在Jetson量过处理时间、丢帧和内存后再决定哪些计算保留C++。不能假定Python一定慢，也不能未测就承诺20万点每秒实时。
+当前C++不发布过滤后的点云。因此若Python需要接收它的过滤结果，必须先明确增加的输出接口；不能把这个接口写成现有功能。
+
+四 为什么暂时不把Point-LIO历史地图作为输入
+Point-LIO提供雷达惯性里程计和建图，可在后期帮助补偿自身运动。官方说明：https://github.com/hku-mars/Point-LIO
+当前风险判断优先用新到达的雷达点；累积地图可能保留已经移动或消失的物体，缺少点也不能证明可通行。RViz的Decay Time只影响显示累积，不是危险判定算法。
+若以后试用Point-LIO当前帧点云：先检查本机实际话题类型、header、坐标系、输出频率、延迟、近点保留和过滤条件，再同步位姿，将点变回传感器/身体局部坐标。世界坐标下的sqrt(x*x+y*y+z*z)不是距佩戴者距离。
+本轮没有改接Point-LIO，没有启动建图，也没有核验本机Point-LIO输出话题。此处为架构取舍。
+
+五 初始化候选的实际算法
+文件：tools/initialization_candidates.py。按八个中文分区阅读即可。
+复用tools/audit_mask_risk.py中的checked_sample输入检查：有限非零XYZ，0至0.5米导出范围，合法逐点帧索引，非空一致的frame_names，正且严格递增的时间戳。
+默认前10秒，至少30帧，检查包括窗口结束附近的时间间隔不超过0.3秒；记录不足10秒直接报错。30帧和0.3秒是当前原型质量门槛，不是通用性能标准。
+按雷达原点固定的2厘米立方格统计。同一格在同一帧的多个点只记一次；没有近点的帧仍计入分母。负坐标使用floor，不是向零取整。
+总出现率至少80%，且五个时间段各至少50%，才列为候选。阈值是探索参数，不能叫“80%概率属于身体”。MID-360扫描分布、边界抖动、衣物和晃动会影响通过率；本轮没有优化这些阈值。
+输出固定self_mask_enabled=false、self_identity_confirmed=false、mask_applied=false。故意不生成self_boxes，不是可以直接传给现有replay_candidate.py的屏蔽配置。
+体素候选不会扩成整个方向、球形半径或一个包住所有点的大盒。审核后如何表示局部区域仍待实现；很多小体素直接转成很多CropBox也可能太慢，需比较掩码表示和数据量。
+静止墙、桌子与支架都可能通过这些统计，代码没有自动区分。必要时以后比较不同背景/姿态的数据，辅助判断哪些回波相对设备固定；持续身份仍需额外证据。身体、衣物、手臂不是一个完全刚性的形状。
+被自身遮挡或屏蔽的空间保持未知，不当作空地；狭小空间中的外物也可能进入同一区域。不要用扩大屏蔽来让提醒看起来更安静。
+
+六 当前文件与版本
+Jetson现场核心：~/haptic_ws/src/haptic_feedback/src/pcl_proximity_node.cpp，现场版本265行。
+现场启动：~/haptic_ws/src/haptic_feedback/launch/pcl_proximity.launch。
+现场配置：~/haptic_ws/src/haptic_feedback/config/self_mask.yaml，默认false、空盒。
+原始采样分析：~/haptic_ws/src/haptic_feedback/scripts/capture_near_cloud.py。
+早期Python：scripts/haptic_feedback_node.py和demo_livox_publisher.py，配套bringup.launch/demo.launch，只是通信与简单最近点演示，不是PCL主算法。
+独立测试版：~/haptic_ws/offline_checks/night05_mask_provenance_20261023，新增来源诊断。GitHub src/pcl_proximity_node.cpp对应此版；现场未替换，不用较旧现场副本覆盖仓库。
+新增Python实际位置：~/haptic_ws/tools/python_init_20261023/initialization_candidates.py、test_initialization_candidates.py、audit_mask_risk.py。
+GitHub对应：tools/initialization_candidates.py、tools/test_initialization_candidates.py；旧audit_mask_risk.py位于仓库根目录，新增工具明确兼容同目录和仓库根目录两种布局，未移动旧文件。
+本轮续做：tools/review_self_mask.py、tools/self_review_template.html、tools/test_review_self_mask.py，负责审核页面、审核来源校验和局部体素过滤预览。
+Jetson最新这一组完整工具位于~/haptic_ws/tools/self_review_20261023，包含初始化和审核，不替换前面的python_init_20261023历史副本。
+Windows路径见同目录“障碍感知开发_本机路径与命令_20261023.txt”，不要求在Windows安装ROS才可读代码或跑纯计算。
+
+七 已验证的命令
+以下为Jetson上已有的新目录，不需启动雷达、ROS master、Point-LIO或相机：
+
+cd ~/haptic_ws/tools/python_init_20261023
+python3 -m unittest discover -p test_initialization_candidates.py -v
+
+使用以前保存的近点数据，输出目录必须是一个尚不存在的新目录：
+
+python3 initialization_candidates.py ~/bags/haptic/cloud_20261022_201447_344246/near_returns.npz --frame livox_frame --seconds 10 --output "$HOME/bags/haptic/init_review_$(date +%Y%m%d_%H%M%S)"
+
+第二段路径是输入NPZ；--frame必须与文件内的真实坐标系一致，不能随便改名跳过校验；--seconds是初始化时长；--output是新的结果目录；--voxel-m默认0.02；--occupancy默认0.8。
+当前保存的旧数据约14秒，不够--seconds 15或20。不能为了通过检查人为修改时间戳。
+SAVED_DIRECTORY输出最后保存位置。看candidate_review.json中的frames_used、candidate_voxels、limitations；candidate_voxels.csv给出格子中心和出现率。两个文件是私有场景资料，不自动上传GitHub。
+从GitHub下载项目后，在项目根目录运行：
+
+python3 -m unittest discover -s tools -p test_initialization_candidates.py -v
+python3 tools/initialization_candidates.py /绝对路径/near_returns.npz --frame livox_frame --output /绝对路径/新结果目录
+
+后一行是路径模板，需替换；原始样本不在公开仓库。运行环境需NumPy，Jetson已有可用版本，不为本任务升级系统库。新工具语法兼容Python3.8，Windows和Jetson均已实际测试。
+若以后需要原C++距离演示，先检查是否已有同名节点和真实输入，避免重复启动：
+
+source /opt/ros/noetic/setup.bash
+source ~/ws_livox/devel/setup.bash
+source ~/haptic_ws/devel/setup.bash
+rosnode list
+rostopic type /livox/lidar
+roslaunch haptic_feedback pcl_proximity.launch
+
+最后一行仅在没有同名节点、并决定运行时使用；它不会自动启动雷达驱动或Point-LIO。本次没有运行此距离节点。观察输出：
+
+rostopic echo /haptic/proximity/distance
+rostopic echo /haptic/proximity/state
+
+UNKNOWN编码255不是PWM；等级0只是没有当前近距离候选，不是安全保证。旧Python演示发布/haptic/nearest_distance，不要与/proximity/distance混淆。
+
+八 下一模型按这个顺序推进
+P0 已完成：核对现有代码，明确三步目标；新增中文分区Python候选统计和14项测试，保存实测边界。源代码整体详细注释请求尚需继续完善，先读本轮分区讲解与学习副本。
+P1 已补软件：生成三个正交投影的离线HTML审核页，可逐体素选择SELF/EXTERNAL/UNSURE并记录理由。导出审核JSON与候选文件SHA绑定，要求每个候选都有决定，SELF需逐格理由和总审核依据。默认全未确认；实际数据尚无人审核。另有已检查的静态近点分布PNG。浏览器工具禁止打开file协议，未尝试绕过；HTML已做JavaScript语法检查和生成测试，交互、手机排版和下载动作尚未实际验证。
+P2 已补纯函数原型：Python审核配置和过滤预览，以小体素逐一匹配，不扩成方向或大盒；配置默认关闭，预览需明确启用。外物/未知不主动屏蔽，坐标系不符拒绝。通过人工反例检查，同一已选体素里的外物仍会被删；这是几何屏蔽的限制。尚未接实时节点，也没有实际自身身份确认。下一小步是实际审核候选与明确实时过滤接口，不能把确认标签当成物理证明。
+P3 第一阶段隔离回放通过后：写Python ROS1适配节点，复用纯函数，加入超时、坐标系检查、重启初始化、数据不足与时间异常状态；用专用命名空间避免和已有/haptic/proximity话题互相发布。新增话题名称届时确定，不假装已经存在。
+P4 距离方案：先复现当前等级/迟滞，再设计0到1连续提醒函数，并把unknown/近场不确定与强度分开输出。确定身体前方、安装倾角、地面与身体距离参考点；安装尚未确定时保留可配置接口。先用模拟与离线数据，再做已知距离外部目标对照。
+P5 速度方案：先关联同一目标或稳定局部区域，再考虑相对接近速度、时间同步和Point-LIO自身位姿。可将距离强度作为底线，快速接近增加额外提醒；额外部分随时间衰减，但外物停在近处不能因此衰减为无提醒。公式与系数仍是待实验选择。
+P6 马达：最后另行确定硬件、驱动和输出映射。当前没有PWM、串口或GPIO执行控制，不接入真实马达来掩盖软件未知状态。
+每次只完成用户当次要求或已授权的一个可验证小步骤，不能看见这份路线图就一次做完所有模块。
+
+九 测试和事实边界
+本轮14项纯测试Windows和Jetson均通过：静态候选仍未确认、同帧重复点、空近点帧、时间分段、负坐标、窗口外点、点序不敏感、时长不足、缺帧间隔、坏schema/参数、原文件不覆盖、失败不生成结果。
+旧保存样本前10秒101帧得到77个候选体素，Windows与Jetson完整报告一致。此值不是识别率或精度。
+经用户单独同意后完成一次15秒有界采样：记录141帧点云、2828条IMU，点云header跨度约14.00005秒；前10秒100帧得到198个候选体素。临时driver/master已停止，配置文件未变。它只验证采集到候选统计可运行，没有实际身份标签或受控运动，不能和77作精度优劣比较。
+用户随后澄清：雷达开启只是可用提示，主线仍是原来的软件与交接任务。因此停止扩大实时测试。
+历史测试发现人工外部细杆可能被局部盒误删；PCL较小支持半径可能删稀疏目标，较大半径可能让孤立点借墙面邻点通过。不能把过滤后距离变大当作精度提升。
+仍未验证：真实身体/支架识别、穿戴晃动、独立场景误报漏报、实时Python性能、速度、端到端延迟、长时稳定性、马达和安全性。已有Boost混用问题未处理。
+
+十 日记与发布交接
+本机首先读取C:/wilder/codex/jetson/AGENTS.md及其链接的最新续接记录和Word日记尾部。跨机器先读仓库docs/CONTINUE_HERE.txt和本说明，再核实实际文件和版本；读不到文件就说明，不能凭旧聊天臆测现场状态。
+每个实质批次追加第一人称研究叙述，区别想法、实现、测试与未验证项，不虚构操作或结果。保留全部旧条目和用户修改；文件被占用就保存待并入条目，不能假称已更新。
+公开文档固定在docs/research-diary.docx、development-log.txt、CONTINUE_HERE.txt。提交使用真实时间，不伪装历史活动。上传后重新获取核验；不可用则明确待同步。
+禁止公开原始bag、NPZ、点云、照片、场景屏蔽配置、内网信息、密码、密钥和内部执行日志。只上传筛选后的代码、说明和汇总。
+当前下一建议是审核实际候选并明确实时过滤接口，见第十一部分；不因为雷达在线就自行开始新的采集或改变现场屏蔽。
+
+十一 本轮续做的审核操作
+用户再次确认继续第一步：它是排除佩戴者及装置自身回波，不是速度判断或调提醒阈值。
+31项测试在Windows和Jetson均通过，其中初始化15项、审核与过滤16项；比最初14项新增了仓库目录布局测试。没有继续新采集或启动ROS。
+代码主线：initialization_candidates.analyze -> review_self_mask.make_page -> 用户审核JSON -> make_profile -> preview。最后目前是离线预览，不是实时输出。
+本轮实际数据的审核页位于同一原始短采样目录candidate_review.html；Windows中文页和静态图的路径见本机说明。
+
+在Jetson生成另一份新审核页面：
+
+cd ~/haptic_ws/tools/self_review_20261023
+python3 review_self_mask.py page --candidate ~/bags/haptic/python_init_20261023_143028/initialization_review/candidate_review.json --npz ~/bags/haptic/python_init_20261023_143028/near_returns.npz --html "$HOME/bags/haptic/python_init_20261023_143028/review_$(date +%Y%m%d_%H%M%S).html"
+
+用浏览器打开所生成HTML。候选只表明空间位置稳定；需要按已有支架/身体证据判断。不知道的保持未确认。页面导出的self_review_decisions.json本身不生效，也不替换默认配置。
+离线预览命令模板（需把下载位置替换成实际路径）：
+
+python3 review_self_mask.py preview --candidate ~/bags/haptic/python_init_20261023_143028/initialization_review/candidate_review.json --npz ~/bags/haptic/python_init_20261023_143028/near_returns.npz --decisions /实际下载位置/self_review_decisions.json --output "$HOME/bags/haptic/review_preview_$(date +%Y%m%d_%H%M%S)"
+
+输出reviewed_profile.json和preview_summary.json，保留源/审核追溯。它不是现有C++的self_boxes格式，也不能直接传给旧replay_candidate.py。
+只有在实际候选已审查、实时输入适配接入、受控外物对照通过之后，才能把“第一步已实现”作为现场可用状态报告；目前应报告“初始化、审核和离线排除软件原型完成，实际审核和实时接入待做”。

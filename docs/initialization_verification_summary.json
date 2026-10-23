@@ -1,0 +1,51 @@
+{
+  "saved_sample_verification": {
+    "unit_tests_windows": 14,
+    "unit_tests_jetson": 14,
+    "saved_sample_reports_equal": true,
+    "frames_used": 101,
+    "candidate_voxels": 77,
+    "mask_applied": false,
+    "live_configuration_unchanged": true,
+    "limits": "Saved stationary data only; no self identity or accuracy labels."
+  },
+  "separately_authorized_live_check": {
+    "recording_seconds_requested": 15,
+    "recorded_frames": 141,
+    "header_span_seconds": 14.000046730041504,
+    "topic_counts": {
+      "/livox/imu": 2828,
+      "/livox/lidar": 141
+    },
+    "frames_used": 100,
+    "candidate_voxels": 198,
+    "near_points_used": 121373,
+    "mask_applied": false,
+    "self_identity_confirmed": false,
+    "temporary_master_stopped": true,
+    "configuration_unchanged": true,
+    "pose_and_object_identity": "not_independently_verified"
+  },
+  "current_direction": "Continue original Python/software guidance; no additional live trials.",
+  "remaining": [
+    "Candidate visualization and review",
+    "Confirmed filter integration",
+    "Continuous intensity",
+    "Velocity/time model",
+    "Motor hardware"
+  ],
+  "review_stage": {
+    "initialization_tests": 15,
+    "review_filter_tests": 16,
+    "total_tests_windows": 31,
+    "total_tests_jetson": 31,
+    "public_layout_import_verified": true,
+    "unreviewed_cli_removes_zero": true,
+    "external_same_cell_false_exclusion_reproduced": true,
+    "actual_candidate_identity_reviewed": false,
+    "realtime_integration_done": false,
+    "javascript_syntax_valid": true,
+    "browser_interaction_verified": false,
+    "browser_verification_limit": "File URL blocked by browser policy; no workaround attempted."
+  }
+}
