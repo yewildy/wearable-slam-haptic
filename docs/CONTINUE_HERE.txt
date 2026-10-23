@@ -1,24 +1,26 @@
-2026-10-24 Recurring offline audit batch 1
-The user authorized continuing this project every six hours, with LiDAR off.
-This supersedes earlier completed/paused notices. Each run handles one small verified batch.
+2026-10-24 Recurring maintenance batch 2
+The post-filter singleton counterexample is fixed in the isolated test copy.
+tools/motion_support.py now checks connected-group size after one radius pass.
+Defaults: 8cm connectivity, at least four surviving returns, no recursive erosion.
+tools/test_motion_groups.py adds eight tests. Device suite: 144 passed, no skips.
+Local targeted tests: 11 passed, 3 SciPy-only skipped.
+tools/reproduce_support_orphan.py now expects the fix by default; --expect-bug
+checks the old module. This is synthetic, not physical self-identity verification.
 
-FIRST NEXT TASK: fix the confirmed post-filter singleton bug in motion_support/pipeline.
-tools/reproduce_support_orphan.py demonstrates the current failure on Jetson:
-four near points -> three removed -> one near survivor, no nearby track,
-yet distance=0.1m and strength=100%. This violates the grouped-target requirement.
-The script deliberately asserts that the old bug reproduces; update its contract into
-a proper regression when fixing. No production algorithm was modified in this batch.
-Avoid recursive whole-cloud erosion that previously timed out. Use bounded group
-support or another tested approach, preserving new grouped near-object warnings.
+The existing device home launcher still points to the ORIGINAL motion_v3 version.
+Do not tell the user that restarting that launcher uses this fix. No live deployment.
+The independently deployed test copy is maintenance02_group_fix_20261024/code.
+Keep this distinction when continuing from GitHub versus the live device.
 
-Read docs/near_pipeline_audit_summary.json for paired saved-near-crop results.
-The sample is 160 frames / 15.90s, near-only, no saved pose or far-field truth.
-R4 and v3 remove the same 80689 rolling points over 60 mature frames; v3 removes
-946 additional isolated points, no track protection restoration in the no-pose run.
-Added far targets and identity poses are synthetic controls, not reconstructed truth.
-Do not claim the singleton explains all real residuals.
+NEXT SMALL BATCH: reduce the new group-check cost without changing its result.
+At 20000 dense synthetic points, filter median increased 64.6 -> 132.0ms.
+Benchmark is only filter CPU time, not whole-node live performance. Do not deploy
+before checking representative full-cloud performance and regressions.
+Then investigate remaining near groups: saved crop still has 19/60 mature near
+frames (was 36), including three near alerts. No obstacle ground truth is available.
+No wholesale 0.5m deletion, no fabricated far points when all observations vanish.
+Unknown is not safety; new grouped near targets must still alert.
 
-Then audit tracked-target protection, timing/input handling, and simplify code/entrypoints.
-Keep each batch small; retain original samples and previous failure evidence.
-No live driver/mapping/camera/motor; device operations only isolated haptic tests.
-Continue the same first-person diary and screened GitHub snapshots after meaningful work.
+Continue six-hour small batches, original samples/backups retained. No real drivers,
+mapping, acquisition, camera, motor, network or system-library changes while away.
+Update first-person diary and screened public records after meaningful verified work.

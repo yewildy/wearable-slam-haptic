@@ -1,0 +1,40 @@
+2026年10月24日 修复去噪后的孤点并记录计算开销
+
+这轮我先把上一次发现的四点反例写成回归测试，确认旧版确实失败，再修改独立测试副本。我没有把50 cm内的点全部删除，而是在原有的一次邻域去噪后，检查留下的点是否还能连成至少4点的小组。连接半径沿用8 cm，成组条件与单个点有几个邻居分开处理，所以不会反复剥掉边缘直到整个物体消失。这个方法仍然只是几何过滤，不能说明这些点一定属于人体或支架。
+
+运行逻辑只修改了motion_support.py，增加了剩余小组检查和被删除小组点数的记录。test_motion_groups.py补充8项测试，包含孤点、无剩余观测、新成团近目标、重复坐标和链状组。设备上的144项单元测试全部通过，没有跳过；本机针对性测试实际通过11项，另外3项因没有SciPy而跳过，不能算作本机通过。
+
+用同一反例对照旧版与修复副本，旧版最后保留1个0.1 m点，输出100%提醒；修复后该孤点不再参与距离，显示合成的0.8 m目标，强度为70%。如果没有其他剩余点，结果是未知，不是安全或零强度。另一个测试确认，新出现的成团0.1 m目标仍然输出100%提醒。固定近点加远目标的滚动测试也保持通过，没有改变10秒学习规则。
+
+我又用此前160帧近点样本复算。60个统计成熟帧中，无位姿模式显示50 cm内距离的帧数从36降为19，其中3帧为近场提醒、16帧为距离候选，其余41帧没有剩余观测。新增小组检查使累计去噪点数从946增至991。这只是同一份近点裁剪样本的前后对照，没有远处真实点或位姿，也没有障碍真值，所以不能说误报率下降了多少，更不能说全部残留已经修完。
+
+我同时测了计算开销，发现不能只看功能测试通过。2万点稠密合成输入中，距离过滤部分的5次测量中位数从约64.6 ms增加到132.0 ms，最高约133.0 ms；2000点从约5.2 ms增加到10.7 ms。它没有再做无界递归，但额外的邻域查询仍有明显成本。这不是整条实时管线的帧率，也不能直接证明实时达标。下一批先优化这部分开销并保持分组结果一致，再检查残留点。
+
+修复副本保存在maintenance02_group_fix_20261024/code，Jetson上也使用独立的同名haptic测试目录。没有切换现有启动命令，没有修改旧R4或原第三版目录，也没有启动雷达、建图、相机或马达。原始样本核对未变。现场穿戴、运动精度、漏检率和安全性仍未验证；当前可确认的是这个孤点反例已经被修复。
+
+2026-10-24 Recurring maintenance batch 2
+The post-filter singleton counterexample is fixed in the isolated test copy.
+tools/motion_support.py now checks connected-group size after one radius pass.
+Defaults: 8cm connectivity, at least four surviving returns, no recursive erosion.
+tools/test_motion_groups.py adds eight tests. Device suite: 144 passed, no skips.
+Local targeted tests: 11 passed, 3 SciPy-only skipped.
+tools/reproduce_support_orphan.py now expects the fix by default; --expect-bug
+checks the old module. This is synthetic, not physical self-identity verification.
+
+The existing device home launcher still points to the ORIGINAL motion_v3 version.
+Do not tell the user that restarting that launcher uses this fix. No live deployment.
+The independently deployed test copy is maintenance02_group_fix_20261024/code.
+Keep this distinction when continuing from GitHub versus the live device.
+
+NEXT SMALL BATCH: reduce the new group-check cost without changing its result.
+At 20000 dense synthetic points, filter median increased 64.6 -> 132.0ms.
+Benchmark is only filter CPU time, not whole-node live performance. Do not deploy
+before checking representative full-cloud performance and regressions.
+Then investigate remaining near groups: saved crop still has 19/60 mature near
+frames (was 36), including three near alerts. No obstacle ground truth is available.
+No wholesale 0.5m deletion, no fabricated far points when all observations vanish.
+Unknown is not safety; new grouped near targets must still alert.
+
+Continue six-hour small batches, original samples/backups retained. No real drivers,
+mapping, acquisition, camera, motor, network or system-library changes while away.
+Update first-person diary and screened public records after meaningful verified work.
