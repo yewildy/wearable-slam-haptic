@@ -104,6 +104,9 @@ class DistancePolicy:
             return self.unknown('STALE_OR_NO_DATA')
         return None
 
+    def support_mask(self, xyz):
+        return supported_points(xyz, self.settings.support_radius, self.settings.min_neighbors, self.backend)
+
     def _level(self, distance):
         s = self.settings
         band = 3 if distance <= s.strong_distance else 2 if distance <= s.medium_distance else 1 if distance <= s.weak_distance else 0
@@ -140,7 +143,7 @@ class DistancePolicy:
         near = ranges < s.min_range
         roi = (ranges >= s.min_range) & (ranges <= s.max_range)
         candidate_xyz, candidate_ranges = remaining[roi], ranges[roi]
-        supported = supported_points(candidate_xyz, s.support_radius, s.min_neighbors, self.backend)
+        supported = self.support_mask(candidate_xyz)
         nearest = float(candidate_ranges[supported].min()) if supported.any() else None
         raw_nearest = float(ranges.min()) if len(ranges) else None
         unsupported_closer = bool((~supported).any() and
