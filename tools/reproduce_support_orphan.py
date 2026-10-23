@@ -1,4 +1,4 @@
-"""A synthetic counterexample: radius pruning can leave a lone supported center."""
+"""Check the post-filter singleton regression; --expect-bug checks the old code."""
 import argparse
 import json
 from pathlib import Path
@@ -10,6 +10,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--code',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--expect-bug',action='store_true')
     args=parser.parse_args();sys.path.insert(0,str(args.code))
     from motion_pipeline import MotionEngine
     engine=MotionEngine()
@@ -28,7 +29,12 @@ def main():
                 nearby_tracks=[t['points'] for t in result['tracks'] if t['distance_m']<.5],
                 violates_grouped_target_requirement=bool(surviving_near==1 and result['valid']
                     and result['distance_m']<.5),production_code_changed=False)
-    assert answer['violates_grouped_target_requirement'],answer
+    if args.expect_bug:
+        assert answer['violates_grouped_target_requirement'],answer
+    else:
+        assert surviving_near == 0 and result['valid'],answer
+        assert abs(result['distance_m']-.8) < 1e-9 and result['strength'] < 1.,answer
+    answer['expected_bug'] = args.expect_bug
     args.output.write_text(json.dumps(answer,indent=2,allow_nan=False))
     print(json.dumps(answer,indent=2))
 
