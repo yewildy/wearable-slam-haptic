@@ -8,13 +8,21 @@ Windows 和 Jetson 可使用同一套计算逻辑；实时 ROS 接口留到下�
 import argparse
 import csv
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 
 import numpy as np
 
-# 复用已经测过的输入检查，避免另写一套略有差异的数据约定。
-from audit_mask_risk import checked_sample
+# 复用已有检查。Jetson独立工具目录中它在同目录；公开仓库旧工具在根目录。
+# 只定位这两个明确位置，不修改全局Python搜索路径。
+_audit_path = Path(__file__).with_name('audit_mask_risk.py')
+if not _audit_path.is_file():
+    _audit_path = Path(__file__).resolve().parents[1] / 'audit_mask_risk.py'
+_audit_spec = importlib.util.spec_from_file_location('initialization_audit', _audit_path)
+_audit = importlib.util.module_from_spec(_audit_spec)
+_audit_spec.loader.exec_module(_audit)
+checked_sample = _audit.checked_sample
 
 
 # 一、检查参数。秒和米是物理单位，比例在 0 到 1 之间。

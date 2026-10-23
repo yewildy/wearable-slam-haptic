@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>近身点云候选审核</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f8fa;color:#20252b;font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif;letter-spacing:0}
+header{padding:18px 24px;background:white;border-bottom:1px solid #cfd5dc}h1{font-size:23px;margin:0 0 6px}p{margin:6px 0;color:#525d68}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 24px;background:#eef3f4;border-bottom:1px solid #ccd5d8}
+button,select,input,textarea{font:inherit}button{padding:7px 12px;border:1px solid #a4adb7;border-radius:4px;background:white;cursor:pointer}button:disabled{opacity:.45}
+main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:0;max-width:1600px;margin:auto}.plots{padding:18px;display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+figure{margin:0;min-width:0}figure:first-child{grid-column:1/-1}figcaption{font-weight:600;padding:4px 0}canvas{background:white;border:1px solid #cdd3da;width:100%;aspect-ratio:1.55;display:block}
+aside{border-left:1px solid #ccd5dc;background:white;padding:18px;min-width:0}h2{font-size:17px;margin:0 0 12px}label{display:block;margin:12px 0 5px}textarea,select,input{width:100%;padding:7px;border:1px solid #aeb7c0;border-radius:3px}textarea{resize:vertical;min-height:90px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 5px;border-bottom:1px solid #e4e8ed;text-align:left}th{position:sticky;top:0;background:#f1f3f5}tr[aria-selected=true]{background:#e4edf9}tr{cursor:pointer}.list{max-height:270px;overflow:auto;margin-top:12px}
+.legend{display:flex;gap:15px;flex-wrap:wrap}.legend span:before{content:"";display:inline-block;width:9px;height:9px;margin-right:5px;background:var(--c)}output{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.error{color:#a51c2a;min-height:24px}
+@media(max-width:850px){main{grid-template-columns:1fr}aside{border-left:0;border-top:1px solid #ccd5dc}.plots{padding:12px}header,.toolbar{padding-left:14px;padding-right:14px}}
+</style>
+<header><h1>近身点云候选审核</h1><p id="sample"></p><p>显示范围：原始近点导出的 0～0.5 m；只判断候选归属，未启用现场过滤。</p></header>
+<div class="toolbar"><div class="legend"><span style="--c:#b07b17">未确认</span><span style="--c:#bc3445">声明为自身</span><span style="--c:#2871ab">外物保留</span></div><output id="counts"></output><button id="export">导出审核记录</button><button id="reset">重置审核</button></div>
+<main><section class="plots" aria-label="点云正交投影"><figure><figcaption>X–Y 平面</figcaption><canvas id="xy" aria-label="XY点云投影"></canvas></figure><figure><figcaption>X–Z 平面</figcaption><canvas id="xz" aria-label="XZ点云投影"></canvas></figure><figure><figcaption>Y–Z 平面</figcaption><canvas id="yz" aria-label="YZ点云投影"></canvas></figure></section>
+<aside><h2>逐格审核</h2><output id="selected">尚未选中候选</output><label for="decision">归属决定</label><select id="decision" disabled><option value="UNSURE">未确认，继续保留</option><option value="SELF">确认属于自身区域</option><option value="EXTERNAL">外部物体，继续保留</option></select><label for="reason">本格判断依据</label><textarea id="reason" disabled></textarea><label for="basis">本次审核依据</label><textarea id="basis" placeholder="例如实际支架范围与原始点云的对应关系"></textarea><p class="error" id="error" role="status"></p><div class="list"><table><thead><tr><th>体素索引</th><th>出现率</th><th>决定</th></tr></thead><tbody id="rows"></tbody></table></div></aside></main>
+<script>
+const data=__REVIEW_DATA__;
+const candidate=data.candidate, width=candidate.parameters.voxel_m;
+const cells=candidate.candidate_cells, labels={UNSURE:'未确认',SELF:'自身',EXTERNAL:'外物'};
+const decisions=cells.map(cell=>({voxel_index:cell.voxel_index,decision:'UNSURE',reason:''}));
+const colors={UNSURE:'#b07b17',SELF:'#bc3445',EXTERNAL:'#2871ab'};
+let selected=-1;
+const el=id=>document.getElementById(id);
+el('sample').textContent=`坐标系 ${candidate.frame} · 初始化 ${candidate.parameters.seconds} s · ${candidate.frames_used} 帧 · ${cells.length} 个候选格 · 背景点每 ${data.display_step} 点显示 1 点`;
+function renderRows(){
+ el('rows').replaceChildren();
+ cells.forEach((cell,i)=>{const row=document.createElement('tr');row.setAttribute('aria-selected',String(i===selected));
+ [cell.voxel_index.join(', '),(cell.frame_fraction*100).toFixed(1)+'%',labels[decisions[i].decision]].forEach(text=>{const td=document.createElement('td');td.textContent=text;row.appendChild(td)});
+ row.addEventListener('click',()=>choose(i));el('rows').appendChild(row)});
+ const n=decisions.filter(d=>d.decision==='SELF').length;el('counts').textContent=`自身声明 ${n} / ${cells.length}`;
+}
+function choose(i){selected=i;el('decision').disabled=el('reason').disabled=i<0;
+ el('selected').textContent=i<0?'尚未选中候选':`体素 ${cells[i].voxel_index.join(', ')} · 中心 ${cells[i].center_m.map(n=>n.toFixed(3)).join(', ')} m`;
+ el('decision').value=i<0?'UNSURE':decisions[i].decision;el('reason').value=i<0?'':decisions[i].reason;renderRows();drawAll()}
+function draw(id,a,b){const c=el(id),rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ c.width=Math.round(rect.width*dpr);c.height=Math.round(rect.height*dpr);const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+ const w=rect.width,h=rect.height,pad=28,size=Math.min(w-2*pad,h-2*pad),cx=w/2,cy=h/2;
+ const x=v=>cx+v/.55*size/2,y=v=>cy-v/.55*size/2;
+ ctx.clearRect(0,0,w,h);ctx.strokeStyle='#e5e8eb';ctx.fillStyle='#6b7580';ctx.font='11px system-ui';
+ for(let v=-.5;v<=.5001;v+=.25){ctx.beginPath();ctx.moveTo(x(v),y(-.5));ctx.lineTo(x(v),y(.5));ctx.moveTo(x(-.5),y(v));ctx.lineTo(x(.5),y(v));ctx.stroke();ctx.fillText(v.toFixed(2),x(v)-12,h-7)}
+ ctx.fillStyle='#293a42';ctx.globalAlpha=.25;for(const p of data.points)ctx.fillRect(x(p[a]),y(p[b]),1.5,1.5);ctx.globalAlpha=1;
+ cells.forEach((cell,i)=>{const p=cell.center_m,s=width/.55*size/2;ctx.strokeStyle=colors[decisions[i].decision];ctx.lineWidth=i===selected?3:1;ctx.strokeRect(x(p[a])-s/2,y(p[b])-s/2,s,s)});
+ ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fill();ctx.fillText('0',cx+5,cy-5);
+ c.onclick=event=>{const r=c.getBoundingClientRect();let best=-1,dist=12;cells.forEach((cell,i)=>{const p=cell.center_m,d=Math.hypot(x(p[a])-(event.clientX-r.left),y(p[b])-(event.clientY-r.top));if(d<dist){best=i;dist=d}});if(best>=0)choose(best)}
+}
+function drawAll(){draw('xy',0,1);draw('xz',0,2);draw('yz',1,2)}
+el('decision').onchange=()=>{if(selected>=0){decisions[selected].decision=el('decision').value;renderRows();drawAll()}};
+el('reason').oninput=()=>{if(selected>=0)decisions[selected].reason=el('reason').value};
+el('reset').onclick=()=>{for(const item of decisions){item.decision='UNSURE';item.reason=''}el('basis').value='';el('error').textContent='';choose(-1)};
+el('export').onclick=()=>{
+ const accepted=decisions.filter(d=>d.decision==='SELF');
+ if(accepted.some(d=>!d.reason.trim())||(accepted.length&&!el('basis').value.trim())){el('error').textContent='声明为自身的格子需要填写判断依据和本次审核依据。';return}
+ el('error').textContent='';const result={schema_version:1,candidate_sha256:data.candidate_sha256,review_basis:el('basis').value,decisions};
+ const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='self_review_decisions.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+};
+new ResizeObserver(drawAll).observe(document.querySelector('.plots'));renderRows();drawAll();
+</script></html>

@@ -1,6 +1,9 @@
 """人工数据检查统计逻辑；不将静态背景当作已确认自身。"""
 import copy
 import tempfile
+import shutil
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 import numpy as np
@@ -110,6 +113,19 @@ class CandidatesTest(unittest.TestCase):
             np.savez_compressed(source, **data)
             with self.assertRaises(ValueError): run(source, target, 'sensor')
             self.assertFalse(target.exists())
+
+    def test_public_repository_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'tools').mkdir()
+            here = Path(__file__).parent
+            shutil.copy2(here/'initialization_candidates.py', root/'tools/initialization_candidates.py')
+            audit = here/'audit_mask_risk.py'
+            if not audit.is_file(): audit = here.parent/'audit_mask_risk.py'
+            shutil.copy2(audit, root/'audit_mask_risk.py')
+            result = subprocess.run([sys.executable, str(root/'tools/initialization_candidates.py'), '--help'],
+                                    capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
 
 
 if __name__ == '__main__':
