@@ -1,0 +1,14 @@
+{
+  "unit_tests_device": 55,
+  "new_model_tests": 17,
+  "new_launcher_tests": 5,
+  "unchanged_policy_tests": 33,
+  "qt_layout_cases": 12,
+  "ros_to_qt_synthetic_cases": 5,
+  "native_desktop_demo_checked": true,
+  "physical_wearable_tested": false,
+  "live_capture_started": false,
+  "motor_control": false,
+  "algorithm_changed": false,
+  "system_packages_installed": false
+}

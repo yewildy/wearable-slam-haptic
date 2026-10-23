@@ -1,3 +1,9 @@
+2026-10-23 新增强度显示窗口
+用户要拿起设备观察，已增加只读PyQt界面和启动器，见docs/STRENGTH_DISPLAY.txt。
+tools/start_strength_display.sh从已有ROS环境启动，已有report发布者就复用，没有才起自己的独立名字的距离节点；只清理自建进程。--demo不读雷达、不发ROS。
+55项测试、12组Qt布局、5项隔离ROS到Qt合成链路通过；桌面模拟窗口已短暂打开和关闭。距离/过滤算法未改，真实身体仍未审核，默认mask不启用。
+窗口断流0.75s变未知，不用0冒充安全。合成演示不是实物距离或穿戴验证，没有新现场采集或马达。临时测试进程/master均停，自动化仍暂停。
+
 2026-10-23 用户已授权开始第二步
 新增Python距离策略、ROS适配和只读完整bag离线计算，详见docs/SECOND_STAGE_DISTANCE.txt。
 核心tools/distance_policy.py；tools/distance_node.py；tools/replay_distance.py；tools/test_distance_policy.py，复用原tools/review_self_mask.py未修改。
