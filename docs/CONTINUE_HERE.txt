@@ -1,25 +1,32 @@
-2026-10-24 Recurring maintenance batch 3
-Reuse first-pass nearest-neighbor indices to certify already-supported surviving groups.
-Only uncertain survivors need another query. Certification is frame-local, not body identity.
-Runtime change only motion_support.py; thresholds and output fields unchanged.
-test_motion_support_reuse.py adds four tests. Device: 148 pass, zero skipped.
-Local targeted: 11 pass, 7 SciPy-only skipped. Do not count skips as passes.
+2026-10-24 Recurring maintenance batch 4
+Read-only temporal audit. Runtime code unchanged from maintenance03_support_speed_20261024/code.
+Existing home launcher remains ORIGINAL motion_v3 (batch 2/3 fixes are NOT loaded there).
+No driver, acquisition, mapping, camera, motor, network or system changes.
 
-Old/new reports AND retained arrays match on 160 saved near frames and 12 selected
-saved full-cloud frames. Four rolling variants and synthetic controls match batch 2 exactly.
-Dense 20k filter median: 131.2 -> 65.1ms; with isolated point: 132.5 -> 67.4ms.
-Saved full-frame filter median: 62.6 -> 44.8ms, after maximum 47.1ms.
-Read support_speed_summary.json for full measurements and scope. These are offline
-filter timings, not whole-node live throughput, physical identity or safety validation.
+audit_temporal_support.py reconstructs past-only buckets and the existing voxel-surface
+tolerance. 81,803 raw point decisions match the runtime removal masks exactly.
+Saved near crop: 160 frames / 60 mature; 19 with remaining points, 3 near alerts.
+123 point observations in 24 connected-group observations (4..12 points each).
+Zero residual matches an existing stable cell; track restoration is zero.
+Own-cell hits range 0..15 of 20 buckets; required >=16 plus segment coverage.
 
-Existing home launcher remains on ORIGINAL motion_v3, with neither batch 2 nor 3 loaded.
-Do not tell the user to restart that launcher and expect these changes.
-Independent device/local test directory: maintenance03_support_speed_20261024/code.
-No live deployment, driver, acquisition, mapping, camera, motor, or network edits.
+Diagnostic spatial pooling (NOT enabled): 68/123 point observations and the nearest
+point in 12/19 residual frames meet the same time requirement when adjacent evidence
+within the existing 1cm voxel-surface tolerance is unioned per bucket.
+This is not a measured reduction in alerts, an object count, or self identity.
+The remaining 55 observations still lack sufficient pooled support.
 
-NEXT SMALL BATCH: investigate remaining near connected groups and their temporal support
-on saved data. Same 60 mature frames still have 19 near-distance outputs, including
-three near alerts. Optimization changed no detection decisions and did not solve them.
-Then audit input/time/frame/dropout boundaries and whole-pipeline offline timing.
-Keep no-remaining observations unknown; new grouped near targets must still alert.
-No blanket 0.5m deletion. Continue bounded batches and first-person diary/public sync.
+Synthetic counterexample: a four-point group alternates 11.9/12.1cm every half second.
+Each cell has 10/20 buckets, pooled 20/20. After 10s it still alerts at ~11.9cm.
+Fixed control removes four near points and reports the synthetic 0.8m target.
+Seven diagnostic tests pass on device; local six pass, one SciPy-dependent skip.
+Full unchanged runtime suite not rerun; previous 148-pass result remains historical.
+
+NEXT SMALL BATCH: make the 2mm boundary-jitter case a fix regression, then implement
+a bounded tolerance-aware temporal candidate experiment in an isolated copy.
+Preserve current-frame exclusion from history; test new near groups, neighboring
+external objects, bucket deduplication, segment coverage, expiry, and performance.
+Do not blanket-delete the 0.5m sphere or claim all remaining groups are explained.
+Any pooled rule can merge different objects in the same small region: explicitly
+test and document this uncertainty. Then resume input/time/frame/dropout audits.
+Keep original data and live entry untouched; update diary and screened public files.

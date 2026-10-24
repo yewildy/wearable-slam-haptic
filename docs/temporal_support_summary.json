@@ -1,0 +1,116 @@
+{
+  "sample_frames": 160,
+  "mature_frames": 60,
+  "saved_crop_only": true,
+  "real_pose_available": false,
+  "mature_states": {
+    "NO_REMAINING_OBSERVATIONS": 41,
+    "NEAR_FIELD_ALERT": 3,
+    "DISTANCE_CANDIDATE": 16
+  },
+  "frames_with_remaining_points": 19,
+  "remaining_point_observations": 123,
+  "remaining_group_observations": 24,
+  "group_size_histogram": {
+    "4": 11,
+    "7": 2,
+    "5": 7,
+    "12": 1,
+    "6": 3
+  },
+  "own_bucket_histogram": {
+    "8": 6,
+    "1": 11,
+    "9": 7,
+    "3": 12,
+    "2": 12,
+    "15": 11,
+    "14": 5,
+    "6": 14,
+    "7": 7,
+    "10": 7,
+    "13": 4,
+    "12": 7,
+    "5": 3,
+    "11": 3,
+    "0": 4,
+    "4": 10
+  },
+  "pooled_bucket_histogram": {
+    "14": 4,
+    "12": 8,
+    "17": 12,
+    "10": 7,
+    "13": 4,
+    "11": 4,
+    "20": 30,
+    "19": 10,
+    "15": 6,
+    "18": 14,
+    "9": 6,
+    "6": 2,
+    "7": 5,
+    "1": 1,
+    "8": 4,
+    "4": 4,
+    "16": 2
+  },
+  "pooled_qualifying_points": 68,
+  "pooled_qualifying_nearest_frames": 12,
+  "existing_stable_matching_residual_points": 0,
+  "raw_mask_matches_checked": 81803,
+  "track_protection_restorations": 0,
+  "synthetic_controls": {
+    "fixed": {
+      "state": "DISTANCE_CANDIDATE",
+      "distance_m": 0.8,
+      "removed": 4,
+      "nearest_evidence": {
+        "own_buckets": 20,
+        "max_neighbor_buckets": 20,
+        "pooled_buckets": 20,
+        "pooled_segments": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "matches_existing_stable": true,
+        "pooled_qualifies": true
+      }
+    },
+    "boundary_jitter_2mm": {
+      "state": "NEAR_FIELD_ALERT",
+      "distance_m": 0.11900840306465758,
+      "removed": 0,
+      "nearest_evidence": {
+        "own_buckets": 10,
+        "max_neighbor_buckets": 10,
+        "pooled_buckets": 20,
+        "pooled_segments": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "matches_existing_stable": false,
+        "pooled_qualifies": true
+      }
+    }
+  },
+  "runtime_changed": false,
+  "pooled_rule_applied": false,
+  "identity_and_safety_validated": false,
+  "device_diagnostic_tests": {
+    "passed": 7,
+    "skipped": 0
+  },
+  "local_diagnostic_tests": {
+    "passed": 6,
+    "skipped": 1
+  },
+  "source_hashes_unchanged": true,
+  "live_launcher_changed": false
+}
