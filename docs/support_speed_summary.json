@@ -1,0 +1,117 @@
+{
+  "scope": "offline_filter_only_not_whole_node",
+  "output_equivalence": true,
+  "synthetic": {
+    "dense_2000": {
+      "frames": 1,
+      "min_points": 2000,
+      "max_points": 2000,
+      "timings": {
+        "before": {
+          "median_s": 0.010137750010471791,
+          "p95_s": 0.011884842009749264,
+          "max_s": 0.012169754016213119,
+          "observations": 5
+        },
+        "after": {
+          "median_s": 0.005101963004563004,
+          "p95_s": 0.005976086610462517,
+          "max_s": 0.006157104013254866,
+          "observations": 5
+        }
+      }
+    },
+    "dense_20000": {
+      "frames": 1,
+      "min_points": 20000,
+      "max_points": 20000,
+      "timings": {
+        "before": {
+          "median_s": 0.13122102999477647,
+          "p95_s": 0.13291295260423794,
+          "max_s": 0.13299801800167188,
+          "observations": 5
+        },
+        "after": {
+          "median_s": 0.06512901000678539,
+          "p95_s": 0.0664678655914031,
+          "max_s": 0.06672877699020319,
+          "observations": 5
+        }
+      }
+    },
+    "dense_20000_with_isolated": {
+      "frames": 1,
+      "min_points": 20001,
+      "max_points": 20001,
+      "timings": {
+        "before": {
+          "median_s": 0.13254123402293772,
+          "p95_s": 0.13298069778247737,
+          "max_s": 0.13300659297965467,
+          "observations": 5
+        },
+        "after": {
+          "median_s": 0.0674386559985578,
+          "p95_s": 0.0678315783967264,
+          "max_s": 0.0678714069945272,
+          "observations": 5
+        }
+      }
+    }
+  },
+  "saved_near_crop": {
+    "frames": 160,
+    "min_points": 1250,
+    "max_points": 1487,
+    "timings": {
+      "before": {
+        "median_s": 0.006702754006255418,
+        "p95_s": 0.0070611580056720415,
+        "max_s": 0.007508637005230412,
+        "observations": 160
+      },
+      "after": {
+        "median_s": 0.003408691001823172,
+        "p95_s": 0.0048249709812807845,
+        "max_s": 0.004988711996702477,
+        "observations": 160
+      }
+    }
+  },
+  "saved_full_frames": {
+    "frames": 12,
+    "min_points": 19968,
+    "max_points": 20064,
+    "timings": {
+      "before": {
+        "median_s": 0.06258938899554778,
+        "p95_s": 0.06377099968522089,
+        "max_s": 0.06393412197940052,
+        "observations": 12
+      },
+      "after": {
+        "median_s": 0.04479920500307344,
+        "p95_s": 0.04630391740502091,
+        "max_s": 0.047075475013116375,
+        "observations": 12
+      }
+    }
+  },
+  "source_files_modified": false,
+  "live_launcher_changed": false,
+  "device_tests": {
+    "passed": 148,
+    "skipped": 0
+  },
+  "local_targeted": {
+    "passed": 11,
+    "skipped": 7
+  },
+  "rolling_four_variants_and_controls_identical": true,
+  "original_sources_hashes_unchanged": true,
+  "remaining_near_mature_frames": 19,
+  "remaining_near_alert_frames": 3,
+  "body_identity_verified": false,
+  "wearable_safety_verified": false
+}

@@ -1,0 +1,39 @@
+2026年10月24日 复用邻域查询以减少过滤开销
+
+上一次修好了过滤后只剩孤点却仍触发强提醒的问题，但增加了计算开销。这次我只优化这个环节，没有修改50 cm、滚动10秒、8 cm邻域或至少4点成组的规则。我发现第一次查询已经知道每个点的近邻，如果这些近邻在去噪后都还存在，就已经能证明该点属于足够大的组，不必再查一次。仍不确定的点才进行第二次查询；如果它们连到了已经确认的组，也应保留。这里的确认仅指组大小，不是确认身体身份。
+
+我在motion_support.py里复用本帧查询返回的邻居下标，不把邻居缓存到下一帧，也没有新增运行入口。参考版的完整半径图检查保留不动，用来检验优化结果。新增test_motion_support_reuse.py的4项测试，包括带孤立点的稠密云只建一次树、不同最小邻居数的随机对照、连接到已确认组的尾部点以及跨帧不沿用证据。旧模块在建树次数测试中实际得到2次，优化后为1次。
+
+设备上的148项单元测试全部通过，无跳过。本机针对性测试通过11项，7项因缺少SciPy而跳过。测试辅助脚本第一次运行有一处换行语法错误，在连接设备前就退出了；补上括号后才开始设备验证。随后我对照了160帧已有近点和旧包中等间隔抽取的12帧完整点云，报告与保留点数组逐项一致。四种滚动回放设置及合成控制的逐帧结果也与上次完全一致，孤点修复没有被优化撤销。
+
+这次交替测量旧版和优化版，避免一直让后一版占热缓存优势。2万点稠密合成输入的过滤耗时中位数从131.2 ms降至65.1 ms；再加一个孤立点时，从132.5 ms降至67.4 ms。160帧近点的中位数从6.70 ms降至3.41 ms。12帧真实保存的完整点云，每帧约2万点，中位数从62.6 ms降至44.8 ms，优化后的最大值为47.1 ms。这些是过滤部分的离线计算时间，不是整套节点的实时帧率或穿戴安全结果。
+
+这轮提高的是速度，没有进一步消除残留：此前无位姿回放在60个成熟帧中仍有19帧显示50 cm内距离，其中3帧近场提醒，这些数字没有变化。我没有为了显示更远而改阈值或清空近点。下一批应分析这些剩余小组的时间支持和来源，再检查输入、时间戳及断流边界；完整实时管线的时延还需要单独验证。
+
+本机与Jetson的修复测试副本都保存在maintenance03_support_speed_20261024/code。原始bag、近点样本和现场原模块前后哈希一致，没有切换原启动命令，也没有启动真实雷达、建图、相机或马达。公开保存代码、测试和汇总，不上传原始点云、场景几何或私有连接信息。
+
+2026-10-24 Recurring maintenance batch 3
+Reuse first-pass nearest-neighbor indices to certify already-supported surviving groups.
+Only uncertain survivors need another query. Certification is frame-local, not body identity.
+Runtime change only motion_support.py; thresholds and output fields unchanged.
+test_motion_support_reuse.py adds four tests. Device: 148 pass, zero skipped.
+Local targeted: 11 pass, 7 SciPy-only skipped. Do not count skips as passes.
+
+Old/new reports AND retained arrays match on 160 saved near frames and 12 selected
+saved full-cloud frames. Four rolling variants and synthetic controls match batch 2 exactly.
+Dense 20k filter median: 131.2 -> 65.1ms; with isolated point: 132.5 -> 67.4ms.
+Saved full-frame filter median: 62.6 -> 44.8ms, after maximum 47.1ms.
+Read support_speed_summary.json for full measurements and scope. These are offline
+filter timings, not whole-node live throughput, physical identity or safety validation.
+
+Existing home launcher remains on ORIGINAL motion_v3, with neither batch 2 nor 3 loaded.
+Do not tell the user to restart that launcher and expect these changes.
+Independent device/local test directory: maintenance03_support_speed_20261024/code.
+No live deployment, driver, acquisition, mapping, camera, motor, or network edits.
+
+NEXT SMALL BATCH: investigate remaining near connected groups and their temporal support
+on saved data. Same 60 mature frames still have 19 near-distance outputs, including
+three near alerts. Optimization changed no detection decisions and did not solve them.
+Then audit input/time/frame/dropout boundaries and whole-pipeline offline timing.
+Keep no-remaining observations unknown; new grouped near targets must still alert.
+No blanket 0.5m deletion. Continue bounded batches and first-person diary/public sync.

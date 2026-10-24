@@ -1,26 +1,25 @@
-2026-10-24 Recurring maintenance batch 2
-The post-filter singleton counterexample is fixed in the isolated test copy.
-tools/motion_support.py now checks connected-group size after one radius pass.
-Defaults: 8cm connectivity, at least four surviving returns, no recursive erosion.
-tools/test_motion_groups.py adds eight tests. Device suite: 144 passed, no skips.
-Local targeted tests: 11 passed, 3 SciPy-only skipped.
-tools/reproduce_support_orphan.py now expects the fix by default; --expect-bug
-checks the old module. This is synthetic, not physical self-identity verification.
+2026-10-24 Recurring maintenance batch 3
+Reuse first-pass nearest-neighbor indices to certify already-supported surviving groups.
+Only uncertain survivors need another query. Certification is frame-local, not body identity.
+Runtime change only motion_support.py; thresholds and output fields unchanged.
+test_motion_support_reuse.py adds four tests. Device: 148 pass, zero skipped.
+Local targeted: 11 pass, 7 SciPy-only skipped. Do not count skips as passes.
 
-The existing device home launcher still points to the ORIGINAL motion_v3 version.
-Do not tell the user that restarting that launcher uses this fix. No live deployment.
-The independently deployed test copy is maintenance02_group_fix_20261024/code.
-Keep this distinction when continuing from GitHub versus the live device.
+Old/new reports AND retained arrays match on 160 saved near frames and 12 selected
+saved full-cloud frames. Four rolling variants and synthetic controls match batch 2 exactly.
+Dense 20k filter median: 131.2 -> 65.1ms; with isolated point: 132.5 -> 67.4ms.
+Saved full-frame filter median: 62.6 -> 44.8ms, after maximum 47.1ms.
+Read support_speed_summary.json for full measurements and scope. These are offline
+filter timings, not whole-node live throughput, physical identity or safety validation.
 
-NEXT SMALL BATCH: reduce the new group-check cost without changing its result.
-At 20000 dense synthetic points, filter median increased 64.6 -> 132.0ms.
-Benchmark is only filter CPU time, not whole-node live performance. Do not deploy
-before checking representative full-cloud performance and regressions.
-Then investigate remaining near groups: saved crop still has 19/60 mature near
-frames (was 36), including three near alerts. No obstacle ground truth is available.
-No wholesale 0.5m deletion, no fabricated far points when all observations vanish.
-Unknown is not safety; new grouped near targets must still alert.
+Existing home launcher remains on ORIGINAL motion_v3, with neither batch 2 nor 3 loaded.
+Do not tell the user to restart that launcher and expect these changes.
+Independent device/local test directory: maintenance03_support_speed_20261024/code.
+No live deployment, driver, acquisition, mapping, camera, motor, or network edits.
 
-Continue six-hour small batches, original samples/backups retained. No real drivers,
-mapping, acquisition, camera, motor, network or system-library changes while away.
-Update first-person diary and screened public records after meaningful verified work.
+NEXT SMALL BATCH: investigate remaining near connected groups and their temporal support
+on saved data. Same 60 mature frames still have 19 near-distance outputs, including
+three near alerts. Optimization changed no detection decisions and did not solve them.
+Then audit input/time/frame/dropout boundaries and whole-pipeline offline timing.
+Keep no-remaining observations unknown; new grouped near targets must still alert.
+No blanket 0.5m deletion. Continue bounded batches and first-person diary/public sync.
