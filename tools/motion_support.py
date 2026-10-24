@@ -9,16 +9,18 @@ class SupportedDistancePolicy(DistancePolicy):
         # 已通过一次邻域去噪和剩余组大小检查，不递归侵蚀物体边缘。
         return np.ones(len(xyz), dtype=bool)
 
-    def _support(self, xyz):
+    def _support(self, xyz, with_neighbors=False):
         if self.backend != 'scipy' or not len(xyz):
-            return supported_points(xyz, self.settings.support_radius,
-                                    self.settings.min_neighbors, self.backend)
+            supported = supported_points(xyz, self.settings.support_radius,
+                                         self.settings.min_neighbors, self.backend)
+            return (supported, None) if with_neighbors else supported
         from scipy.spatial import cKDTree
         # 只需知道第4近点是否在半径内，不枚举稠密区域的全部邻居。
-        distances, _ = cKDTree(xyz).query(xyz, k=self.settings.min_neighbors+1)
-        return distances[:, -1] <= self.settings.support_radius
+        distances, neighbors = cKDTree(xyz).query(xyz, k=self.settings.min_neighbors+1)
+        supported = distances[:, -1] <= self.settings.support_radius
+        return (supported, neighbors) if with_neighbors else supported
 
-    def _group_mask(self, xyz):
+    def _group_mask(self, xyz, certified=None):
         """保留去噪后仍有至少4个点的连通组，连接半径沿用8cm。
 
         不是再次要求每个点有3个邻居：链状组的边缘也能保留。
@@ -30,19 +32,28 @@ class SupportedDistancePolicy(DistancePolicy):
             return np.zeros(count, dtype=bool)
         radius = self.settings.support_radius
         if self.backend == 'scipy':
+            # certified只来自本帧第一次查询：其邻居去噪后仍全部存在，
+            # 因而已有足够大的组作证据。其余点才需要第二次查询。
+            certified = np.zeros(count, dtype=bool) if certified is None else certified
+            pending = np.flatnonzero(~certified)
+            if not len(pending):
+                return np.ones(count, dtype=bool)
             from scipy.spatial import cKDTree
             from scipy.sparse import coo_matrix
             from scipy.sparse.csgraph import connected_components
             # 每点最多保存minimum条边，避免稠密云产生全部点对。
             # 少于minimum点的小组件不可能因截边而产生：若某点截掉了
             # 邻居，它已经连接minimum-1个其他点，所在组件必定足够大。
-            distances, neighbors = cKDTree(xyz).query(xyz, k=minimum)
-            rows = np.broadcast_to(np.arange(count)[:, None], neighbors.shape)
+            distances, neighbors = cKDTree(xyz).query(xyz[pending], k=minimum)
+            rows = np.broadcast_to(pending[:, None], neighbors.shape)
             within = (distances <= radius) & (neighbors < count)
             graph = coo_matrix((np.ones(np.count_nonzero(within)),
                                 (rows[within], neighbors[within])), shape=(count, count))
             _, labels = connected_components(graph.tocsr(), directed=False)
-            return np.bincount(labels)[labels] >= minimum
+            group_sizes = np.bincount(labels)
+            # 小组件若连到已确认的组，也应保留，不能只因省略了组内边就删掉。
+            touches_certified = np.bincount(labels[certified], minlength=len(group_sizes)) > 0
+            return (group_sizes[labels] >= minimum) | touches_certified[labels]
         if self.backend != 'reference' or count > 4000:
             raise ValueError('Reference group check requires at most 4000 test points')
         # 教学/测试参考版遍历完整半径图，用来核对设备的稀疏图实现。
@@ -79,8 +90,12 @@ class SupportedDistancePolicy(DistancePolicy):
         eligible = finite & (ranges > 0) & (ranges <= self.settings.max_range)
         active = np.flatnonzero(eligible)
         # 单次半径离群点过滤。邻域支持来自本帧原始剩余点，不作递归k-core。
-        active = active[self._support(xyz[active])]
-        grouped = self._group_mask(xyz[active])
+        supported, neighbors = self._support(xyz[active], with_neighbors=True)
+        # supported行的第minimum个邻居在半径内，所有下标均有效。
+        # 只复用这一帧的局部变量，不缓存跨帧邻居或改变任何筛选阈值。
+        certified = None if neighbors is None else np.all(supported[neighbors[supported]], axis=1)
+        active = active[supported]
+        grouped = self._group_mask(xyz[active], certified)
         small_group_removed = int(np.count_nonzero(~grouped))
         active = active[grouped]
         keep = ~eligible
