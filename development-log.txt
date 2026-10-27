@@ -1,0 +1,36 @@
+Development log
+
+2026-10-27
+
+I decided to go back to a small version of the code and work through it myself. I could run the earlier program, but I was still not clear about what happened after a point cloud arrived. Today I wanted to understand that part before adding anything else.
+
+At first I was looking for a line that reads the incoming message. I eventually understood that Subscriber registers on_cloud as the callback. ROS passes each new message into that function. The function then takes out XYZ, cleans invalid coordinates, and calls my filtering function. Defining on_cloud does not run it immediately. This was the part I had been missing.
+
+I wrote a loop to calculate the distance of each point and keep only the ones farther than 0.5 m. The four-point example was useful because I could check it by hand: 0.1 m and 0.3 m should disappear, while 0.8 m and 1.2 m should stay. I also tried the ROS mock input so I could separate a calculation problem from a message-receiving problem.
+
+Connecting the real LiDAR did not work at first. I thought the default topic in the Python file was enough, but I had left the simulated topic in the startup arguments. That argument takes priority over the default. After switching the input to /livox/lidar and restarting the receiving node, it worked. I need to check the command I actually ran, not just the code on screen.
+
+After that I made filter_logic_closer_num.py. While keeping points, I compare their distances with the smallest value found so far. I start that value at inf. The function now returns two things, so the caller also needs two variables: kept and min_distance. I can now see the nearest remaining distance in the terminal. This is not a separate ROS distance topic yet; I had been mixing up returning a value inside Python and publishing a message.
+
+There are still a few things to sort out. If no points remain, the distance stays inf, and the empty array has shape (0,) rather than (0, 3). Also, deleting everything within 0.5 m does not mean I have identified the device or my body. It would delete a real obstacle in that range too. For now I am treating this as a basic filtering exercise.
+
+Next I want to turn the distance into a number for alert strength: closer means stronger. I will start by printing the number and checking a few distances, without connecting a motor. I have not decided the distance limits yet. I also need to keep "no valid distance" separate from "zero alert."
+
+
+开发日志
+
+2026-10-27
+
+今天决定先回到一个小版本，自己把代码理顺。之前的程序虽然能运行，但点云进来以后到底走到哪里，我还是不太清楚。先把这部分弄明白，再往里面加功能。
+
+一开始我一直在找“读取收到的数据”的那一行。后来才理解，Subscriber是登记收到消息后调用on_cloud，ROS会把每一帧消息传进这个函数。函数里面再取XYZ、清理无效坐标，然后调用我写的过滤函数。定义on_cloud的时候不会马上执行里面的内容，我之前主要卡在这里。
+
+距离过滤先用了最直观的循环，一个点一个点算距离，只留下大于0.5 m的点。四点例子比较容易自己核对：0.1 m和0.3 m删掉，0.8 m和1.2 m留下。之后再用ROS模拟输入，把“计算有没有错”和“消息有没有收到”分开看。
+
+接真实雷达的时候没有一次成功。我以为Python文件里的默认话题写对就行了，其实启动命令里还带着模拟话题的参数，这个参数会覆盖默认值。改成/livox/lidar，重新启动接收节点后就收到了。以后不能只看屏幕上的代码，也要看实际输入了什么命令。
+
+接着另存了一份filter_logic_closer_num.py，一边保留点，一边比较当前距离是不是比之前找到的更小。最小值先设成inf。函数现在返回两项，调用处也要用kept和min_distance两个变量接收。现在终端可以看到最近保留点的距离了。这里还不是把距离发布成单独的ROS话题，我之前把Python内部返回值和发布消息有点混在一起了。
+
+还有几个地方没处理完。没有保留点时，距离会一直是inf，空数组的形状也是(0,)，不是(0, 3)。另外，直接删掉0.5 m内的全部点，不等于识别出了设备或自己的身体，真的有障碍进入这个范围也会被删掉。目前先把它当作基础过滤练习。
+
+下一步想把距离换成提醒强度，越近越强。先只打印数字，用几个距离核对一下，不接马达。具体的距离上下限还没决定。没有有效距离的情况，也不能直接当成提醒强度为零。
