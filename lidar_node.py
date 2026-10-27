@@ -8,7 +8,7 @@ from livox_ros_driver2.msg import CustomMsg
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 
-from filter_logic import PointFilter
+from filter_logic_closer_num import PointFilter
 
 
 def main():
@@ -45,15 +45,15 @@ def main():
        
 
         # 2. 直接扔进你的算法里
-        kept = point_filter.filter(clean_points, message.header.stamp.to_sec())
+        kept, min_distance = point_filter.filter(clean_points, message.header.stamp.to_sec())
 
 # 3. 搞定，准备发布或画图！
 
         # 五、把保留点发布出去。继承原帧的坐标系和时间，不做坐标变换。
         output = point_cloud2.create_cloud_xyz32(message.header, kept.tolist())
         publisher.publish(output)
-        rospy.loginfo_throttle(1.0, '对方发布的第 %d 帧 | 原始点=%d，有效点=%d，保留点=%d',
-                              message.header.seq, len(points), len(clean_points), len(kept))
+        rospy.loginfo_throttle(1.0, '对方发布的第 %d 帧 | 原始点=%d，有效点=%d，保留点=%d，最近保留点距离=%f',
+                              message.header.seq, len(points), len(clean_points), len(kept), min_distance)
 
     # 六、订阅雷达话题，并持续等待回调。
     rospy.Subscriber(input_topic, CustomMsg, on_cloud, queue_size=1,
