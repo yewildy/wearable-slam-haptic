@@ -1,34 +1,38 @@
-2026-10-27
+English
 
-今日はROSのSubscriberとコールバックの流れを確認した。
-受信したメッセージがon_cloud(message)に渡され、XYZを配列にした後でfilter()に入る。
-Pythonの配列だけのテストと、ROSで送受信するテストは別だと分かった。
+September 2026 - Background
+I returned to the wearable SLAM setup after the summer break. This is the background to the project; the Python filtering code below was written in October.
 
-各点の距離を計算し、0.50 mより大きい点だけを残す処理を書いた。
-0.10、0.30、0.80、1.20 mの例では、0.80と1.20 mが残った。
-全部消した場合に配列の形が(0,)になる点は、今後直す必要がある。
-説明用に切り出したexplain_1test.pyは単独では実行できないため、この版には含めていない。
+2026-10-27 - Receiving and filtering points
+I worked through how Subscriber calls on_cloud(message), and how the XYZ array reaches filter(). A direct Python function test is different from sending and receiving ROS messages.
+I added a loop that keeps points farther than 0.50 m. For the four-point example, 0.80 m and 1.20 m remain. An empty result still has shape (0,) rather than (0, 3); this needs tidying up.
 
-まだ10秒間の履歴は使っていない。実際のLiDARでの確認はこれから。
+2026-10-27 - Connecting the real LiDAR
+At first the node received nothing. The launch argument still selected the simulated input, overriding the default topic in the code. Restarting with /livox/lidar fixed the connection.
 
+2026-10-27 - Returning the nearest distance
+I added filter_logic_closer_num.py. It starts the minimum at inf, updates it when a closer retained point is found, and returns both the cloud and the distance. The caller unpacks them into kept and min_distance.
+The distance is now printed in the terminal, not published on a separate topic. No retained points means inf, which must not be read as a safe, clear area.
 
-2026-10-27 実際のLiDARに接続
-
-最初は受信できなかった。調べると、起動時に模擬入力のトピックを指定したままだった。
-コードの初期値が/livox/lidarでも、_input_topicで渡した値が優先される。
-実際のトピックを指定して起動し直したところ、受信できた。
-50 cm以内の点を除き、残った点群を別のトピックに送るのが今回の版。
-まだ定量的な精度評価はしていない。
-
-次は、残った点から一番近い点を探し、座標と距離を別のトピックで送る。
+Next
+Try mapping distance to alert strength with a simple linear function. Thresholds and missing-data handling still need to be decided. No motor test or quantitative accuracy evaluation has been done for this version.
 
 
-2026-10-27 最小距離を返す
+中文
 
-filter_logic_closer_num.pyで、50 cmより遠い点を残しながら最小距離を計算した。
-最初の値をinfにして、より小さい距離が出たら更新する。
-戻り値は点群と最小距離の二つにし、受信側でkept, min_distanceに分けて受け取った。
-端末のログに距離を表示できた。まだ距離専用のPublisherは追加していない。
-残った点がない場合はinfが返るので、「遠くて安全」とは区別が必要。
+2026年9月 - 背景
+暑假后重新回到可穿戴SLAM装置的研究。这部分是项目背景，下面的Python过滤代码是在10月编写的。
 
-次は距離と通知の強さを線形に対応させる方法を考える。しきい値と欠測時の扱いはこれから決める。
+2026-10-27 - 接收和过滤点云
+理清了Subscriber如何调用on_cloud(message)，以及XYZ数组如何传入filter()。直接调用Python函数测试，和通过ROS收发消息测试，是两回事。
+用循环保留大于0.50 m的点。四点例子中留下0.80 m和1.20 m。全部删除后数组形状还是(0,)，不是(0, 3)，这点还需要整理。
+
+2026-10-27 - 接入真实雷达
+开始收不到消息，原因是启动参数仍然选择模拟输入，覆盖了代码里的默认话题。用/livox/lidar重新启动后连接成功。
+
+2026-10-27 - 返回最近距离
+新增filter_logic_closer_num.py，把最小距离初始值设为inf，找到更近的保留点就更新，最后一起返回点云和距离。调用处用kept和min_distance解包。
+目前距离打印在终端，没有单独发布话题。没有保留点时返回inf，不能把它当作周围没有障碍。
+
+下一步
+先尝试把距离线性换成提醒强度。阈值和没有有效数据时的处理还没决定。本版本还没有进行马达测试或定量精度评价。
