@@ -1,22 +1,21 @@
 # wearable-slam-haptic
 
-JetsonとMID-360を使って、周囲の物体との距離に応じた振動通知を作りたいと考えています。まずはPythonで点群処理を一つずつ試しています。
+JetsonとMID-360で、点群処理と振動通知を少しずつ作っています。
 
-今は、LiDARから50 cm以内の点を取り除くところまで書きました。まだ身体と障害物を区別する処理ではありません。次は実際のLiDARの点群で動きを確認します。
+ROSのノードでLiDARのトピックを受信し、50 cm以内の点を除いて、残った点群を別のトピックに送るところまでできました。実際のLiDARでも受信できました。
 
-`filter_logic.py`が処理本体、`lidar_node.py`がROSの受信と送信です。`mock_lidar.py`は毎秒4点を送る確認用です。
+入力は`/livox/lidar`、出力は`/haptic_learning/filtered_points`です。処理は`filter_logic.py`、ROSの受信と送信は`lidar_node.py`にあります。まだ身体と障害物の区別はしていません。
 
-ROS Noeticと、ビルド済みの`livox_ros_driver2`が必要です。`run.sh`は現在使っているJetsonのワークスペースを読み込みます。
+次は、50 cmより遠い点の中から一番近い点を探し、その座標と距離をトピックで送ってみます。
+
+ROS Noeticと、ビルド済みの`livox_ros_driver2`が必要です。今のJetsonでは、ドライバを起動してから別の端末で実行します。
 
 ```bash
-# 4点の簡単な確認（ROS不要）
-python3 filter_logic.py
+bash run.sh _input_topic:=/livox/lidar
+```
 
-# ROSの模擬入力で確認（別の端末でroscoreを起動しておく）
-source /opt/ros/noetic/setup.bash
-source ~/haptic_ws/devel/setup.bash
-python3 mock_lidar.py
+`mock_lidar.py`は毎秒4点を送る確認用です。模擬入力を使うときは、受信側を次のように起動します。
 
-# もう一つの端末
+```bash
 bash run.sh _input_topic:=/haptic_learning/mock_lidar
 ```
